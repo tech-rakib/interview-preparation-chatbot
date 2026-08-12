@@ -17,13 +17,18 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.anonymous.mobile"
+      "package": "com.interviewprep.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "developmentClient": {
       "silentLaunch": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "df366566-a10c-41c1-b300-0380e838d3f1"
+      }
     }
   }
 }
