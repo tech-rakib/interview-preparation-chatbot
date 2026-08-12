@@ -35,9 +35,9 @@ const getBaseURL = () => {
   }
 
   if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:8000';
+    return 'https://interview-preparation-chatbot-wq1z.onrender.com';
   }
-  return 'http://localhost:8000';
+  return 'https://interview-preparation-chatbot-wq1z.onrender.com';
 };
 
 const api = axios.create({
