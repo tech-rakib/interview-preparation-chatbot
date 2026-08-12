@@ -9,5 +9,14 @@ backend/routes/__pycache__/
 frontend/node_modules/
 frontend/dist/
 
+# Mobile
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+**/.gradle/
+**/android/.gradle/
+**/android/build/
+**/android/app/build/
+
 # Misc
 .DS_Store

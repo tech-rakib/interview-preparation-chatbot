@@ -18,15 +18,14 @@ const getBaseURL = () => {
     const Constants = ConstantsModule.default || ConstantsModule;
     const uri =
       Constants?.expoConfig?.hostUri ||
-      Constants?.experienceUrl ||
-      Constants?.linkingUri ||
       Constants?.manifest?.debuggerHost ||
       Constants?.manifest2?.extra?.expoGo?.developer?.tool;
 
     if (uri && typeof uri === 'string') {
       const cleanUri = uri.replace(/^[a-zA-Z]+:\/\//, '');
       const ip = cleanUri.split(':')[0];
-      if (ip && ip !== 'localhost' && ip !== '127.0.0.1' && ip !== '0.0.0.0') {
+      const isIPv4 = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip);
+      if (isIPv4 && ip !== '127.0.0.1' && ip !== '0.0.0.0') {
         return `http://${ip}:8000`;
       }
     }
@@ -34,9 +33,6 @@ const getBaseURL = () => {
     // fallback if expo-constants is unavailable
   }
 
-  if (Platform.OS === 'android') {
-    return 'https://interview-preparation-chatbot-wq1z.onrender.com';
-  }
   return 'https://interview-preparation-chatbot-wq1z.onrender.com';
 };
 

@@ -1,0 +1,28 @@
+# EAS Build Ignore Configuration
+
+# Ignore local native directories to enforce cloud Prebuild
+android/
+ios/
+
+# Dependencies & caches
+node_modules/
+.expo/
+dist/
+web-build/
+
+# Android build cache & outputs
+.gradle/
+**/android/.gradle/
+**/android/build/
+**/android/app/build/
+
+# iOS build cache & outputs
+**/ios/build/
+**/ios/Pods/
+
+# Environment and debug files
+.env*.local
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log

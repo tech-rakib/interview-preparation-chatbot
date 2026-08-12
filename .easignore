@@ -1,0 +1,20 @@
+# EAS Build Ignore Configuration
+
+# Ignore native directories
+**/android/
+**/ios/
+
+# Dependencies & caches
+node_modules/
+**/node_modules/
+.expo/
+**/.expo/
+
+# Gradle build cache & outputs
+.gradle/
+**/.gradle/
+
+# Python / Backend
+**/venv/
+**/__pycache__/
+*.pyc

@@ -51,12 +51,24 @@ class TokenResponse(BaseModel):
 
 
  
+import bcrypt
+
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    pwd_bytes = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode('utf-8')
 
 
 def verify_password(plain_password: str, password_hash: str) -> bool:
-    return pwd_context.verify(plain_password, password_hash)
+    try:
+        if password_hash.startswith("$2b$") or password_hash.startswith("$2a$"):
+            return bcrypt.checkpw(plain_password.encode('utf-8'), password_hash.encode('utf-8'))
+    except Exception:
+        pass
+    try:
+        return pwd_context.verify(plain_password, password_hash)
+    except Exception:
+        return False
 
 
 def create_access_token(data: dict) -> str:
@@ -89,22 +101,30 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
  
 @router.post("/register", response_model=TokenResponse)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(User.email == payload.email).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
+    try:
+        existing = db.query(User).filter(User.email == payload.email).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
 
-    user = User(
-        name=payload.name,
-        email=payload.email,
-        password_hash=hash_password(payload.password),
-        plan="free",
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+        user = User(
+            name=payload.name,
+            email=payload.email,
+            password_hash=hash_password(payload.password),
+            plan="free",
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
 
-    token = create_access_token({"sub": str(user.id)})
-    return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
+        token = create_access_token({"sub": str(user.id)})
+        return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"[Auth] Registration error: {e}")
+        raise HTTPException(status_code=500, detail=f"Registration error: {str(e)}")
 
 
 @router.post("/login", response_model=TokenResponse)
