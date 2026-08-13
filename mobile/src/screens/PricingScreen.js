@@ -387,7 +387,7 @@ export default function PricingScreen({ navigation }) {
                 </TouchableOpacity>
               </ScrollView>
             )}
-          SafeAreaView>
+          </SafeAreaView>
         </View>
       </Modal>
     </View>
