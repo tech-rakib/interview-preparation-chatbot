@@ -112,3 +112,82 @@ INSERT INTO questions (topic, question_text) VALUES
 ('CN', 'What is the difference between HTTP and HTTPS?'),
 ('CN', 'What is the three-way handshake in TCP?'),
 ('CN', 'What is NAT (Network Address Translation) and why is it used?');
+
+-- C (C Programming)
+INSERT INTO questions (topic, question_text) VALUES
+('C', 'What is a pointer in C and how does pointer arithmetic work?'),
+('C', 'Explain the difference between malloc(), calloc(), realloc(), and free().'),
+('C', 'What is a dangling pointer and how can memory leaks be avoided in C?'),
+('C', 'Explain the difference between pass-by-value and pass-by-reference using pointers in C.'),
+('C', 'What is the purpose of the volatile keyword in C?'),
+('C', 'What is a structure in C, and how does structure padding affect its memory size?'),
+('C', 'Explain the difference between a macro (#define) and an inline function in C.'),
+('C', 'What is a NULL pointer versus a wild pointer in C?');
+
+-- CPP (C++ Programming)
+INSERT INTO questions (topic, question_text) VALUES
+('CPP', 'What is the difference between references and pointers in C++?'),
+('CPP', 'Explain the concepts of RAII and smart pointers (std::unique_ptr, std::shared_ptr, std::weak_ptr).'),
+('CPP', 'What is a virtual function and how does the vtable work in C++?'),
+('CPP', 'Explain the difference between std::vector and std::list in C++ STL.'),
+('CPP', 'What is function overloading vs operator overloading in C++?'),
+('CPP', 'What is the difference between copy constructor and assignment operator in C++?'),
+('CPP', 'Explain template metaprogramming and how templates work in C++.'),
+('CPP', 'What is the difference between private, protected, and public inheritance in C++?');
+
+-- JAVA (Java Programming)
+INSERT INTO questions (topic, question_text) VALUES
+('JAVA', 'Explain the difference between JDK, JRE, and JVM.'),
+('JAVA', 'How does Garbage Collection work in Java and what are different GC algorithms?'),
+('JAVA', 'Explain why String is immutable in Java and how String Pool works.'),
+('JAVA', 'What is the difference between abstract class and interface in Java (including Java 8+ features)?'),
+('JAVA', 'Explain how HashMap works internally in Java (hash code, buckets, collision handling).'),
+('JAVA', 'What is the difference between final, finally, and finalize in Java?'),
+('JAVA', 'Explain multithreading in Java and how synchronization works with locks and synchronized blocks.'),
+('JAVA', 'What is the difference between throw and throws in Java exception handling?');
+
+-- CA (Computer Architecture)
+INSERT INTO questions (topic, question_text) VALUES
+('CA', 'Explain the difference between RISC and CISC architectures.'),
+('CA', 'What is instruction pipelining and what are pipeline hazards (data, control, structural)?'),
+('CA', 'Explain cache hierarchy (L1, L2, L3) and cache mapping techniques (direct, set associative, fully associative).'),
+('CA', 'What is Von Neumann architecture and how does it differ from Harvard architecture?'),
+('CA', 'What is the role of Arithmetic Logic Unit (ALU) and Program Counter (PC) in a CPU?'),
+('CA', 'Explain the concept of memory interleaving and its performance benefits.'),
+('CA', 'What is Direct Memory Access (DMA) and why is it used?'),
+('CA', 'Explain branch prediction and why it is critical for modern superscalar processors.');
+
+-- SAD (System Analysis and Design)
+INSERT INTO questions (topic, question_text) VALUES
+('SAD', 'What is the System Development Life Cycle (SDLC) and its key phases?'),
+('SAD', 'Explain the difference between Waterfall and Agile software development methodologies.'),
+('SAD', 'What is a Data Flow Diagram (DFD) and how does context level DFD differ from Level 1 DFD?'),
+('SAD', 'Explain functional vs non-functional requirements with software examples.'),
+('SAD', 'What is a Use Case Diagram and how does it help in system requirement gathering?'),
+('SAD', 'Explain the concept of system feasibility study (technical, operational, economic).'),
+('SAD', 'What is coupling and cohesion in software design, and why is high cohesion/low coupling desired?'),
+('SAD', 'Explain software testing strategies: Unit Testing, Integration Testing, and System Testing.');
+
+-- AI (Artificial Intelligence)
+INSERT INTO questions (topic, question_text) VALUES
+('AI', 'Explain the difference between Supervised, Unsupervised, and Reinforcement Learning.'),
+('AI', 'What is the difference between Breadth-First Search, Depth-First Search, and A* Search in AI?'),
+('AI', 'What is overfitting in Machine Learning and how can it be prevented?'),
+('AI', 'Explain how Artificial Neural Networks (ANN) work, including forward propagation and backpropagation.'),
+('AI', 'What is the difference between Classification and Regression problems?'),
+('AI', 'Explain Turing Test and its significance in evaluating AI systems.'),
+('AI', 'What is the difference between Precision, Recall, and F1-Score in ML model evaluation?'),
+('AI', 'What is a Decision Tree algorithm and how does Information Gain / Entropy work?');
+
+-- CP (Competitive Programming)
+INSERT INTO questions (topic, question_text) VALUES
+('CP', 'Problem: Two Sum\nGiven an array of integers nums and an integer target, write a function solution in C++/Python that returns indices of the two numbers such that they add up to target.\nInput: nums = [2,7,11,15], target = 9\nOutput: [0,1]'),
+('CP', 'Problem: Reverse a Linked List\nWrite a raw C++ or Python function to reverse a singly linked list and return its head node.\nInput: 1 -> 2 -> 3 -> 4 -> 5 -> NULL\nOutput: 5 -> 4 -> 3 -> 2 -> 1 -> NULL'),
+('CP', 'Problem: Maximum Subarray Sum (Kadane''s Algorithm)\nGiven an integer array nums, find the subarray with the largest sum and write code to return its sum.\nInput: nums = [-2,1,-3,4,-1,2,1,-5,4]\nOutput: 6 (Subarray [4,-1,2,1])'),
+('CP', 'Problem: Valid Parentheses\nGiven a string s containing just the characters ''('', '')'', ''{'', ''}'', ''['' and '']'', write a code solution to determine if the input string is valid.\nInput: s = "()[]{}"\nOutput: true'),
+('CP', 'Problem: Palindrome Number\nGiven an integer x, write a function to return true if x is a palindrome, and false otherwise.\nInput: x = 121\nOutput: true'),
+('CP', 'Problem: Binary Search\nGiven an array of integers nums which is sorted in ascending order, and an integer target, write a C++/Python solution to search target in nums.\nInput: nums = [-1,0,3,5,9,12], target = 9\nOutput: 4'),
+('CP', 'Problem: Climbing Stairs (DP)\nYou are climbing a staircase. It takes n steps to reach the top. Each time you can either climb 1 or 2 steps. Write dynamic programming code to compute total distinct ways to reach top.\nInput: n = 3\nOutput: 3'),
+('CP', 'Problem: Find Missing Number\nGiven an array nums containing n distinct numbers in the range [0, n], write code to return the only number in the range that is missing from the array.\nInput: nums = [3,0,1]\nOutput: 2');
+
+

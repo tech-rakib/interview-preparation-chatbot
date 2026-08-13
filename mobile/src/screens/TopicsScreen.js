@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/client';
 import Header from '../components/Header';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +21,13 @@ const TOPIC_LABELS = {
   DBMS: 'Database Management Systems',
   OOP: 'Object-Oriented Programming',
   CN: 'Computer Networks',
+  C: 'C Programming',
+  CPP: 'C++ Programming',
+  JAVA: 'Java Programming',
+  CA: 'Computer Architecture',
+  SAD: 'System Analysis and Design',
+  AI: 'Artificial Intelligence',
+  CP: 'Competitive Programming (VS Code Editor)',
 };
 
 const TOPIC_ICONS = {
@@ -28,6 +36,13 @@ const TOPIC_ICONS = {
   DBMS: 'server-outline',
   OOP: 'cube-outline',
   CN: 'globe-outline',
+  C: 'code-working-outline',
+  CPP: 'terminal-outline',
+  JAVA: 'cafe-outline',
+  CA: 'cpu-outline',
+  SAD: 'git-network-outline',
+  AI: 'sparkles-outline',
+  CP: 'terminal',
 };
 
 export default function TopicsScreen({ navigation }) {
@@ -55,9 +70,12 @@ export default function TopicsScreen({ navigation }) {
     }
   };
 
-  useEffect(() => {
-    fetchTopics();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchTopics();
+    }, [])
+  );
+
 
 
   const onRefresh = () => {
@@ -67,19 +85,24 @@ export default function TopicsScreen({ navigation }) {
 
   const handleSelectTopic = (topic, locked) => {
     if (locked) return;
-    navigation.navigate('Chat', { topic });
+    if (topic === 'CP') {
+      navigation.navigate('CPEditor', { topic });
+    } else {
+      navigation.navigate('Chat', { topic });
+    }
   };
 
   const renderTopicItem = ({ item }) => {
     const { topic, locked } = item;
     const label = TOPIC_LABELS[topic] || topic;
     const iconName = TOPIC_ICONS[topic] || 'document-text-outline';
+    const isCP = topic === 'CP';
 
     return (
       <TouchableOpacity
         style={[
           styles.card,
-          { backgroundColor: theme.card, borderColor: theme.border },
+          { backgroundColor: theme.card, borderColor: isCP ? '#007ACC' : theme.border },
           locked && { backgroundColor: theme.inputBg, opacity: 0.7 },
         ]}
         onPress={() => handleSelectTopic(topic, locked)}
@@ -90,13 +113,13 @@ export default function TopicsScreen({ navigation }) {
           <View
             style={[
               styles.iconBox,
-              { backgroundColor: locked ? theme.inputBg : theme.primaryLight },
+              { backgroundColor: isCP ? '#007ACC' : locked ? theme.inputBg : theme.primaryLight },
             ]}
           >
             <Ionicons
               name={iconName}
               size={32}
-              color={locked ? theme.subtext : theme.primary}
+              color={isCP ? '#FFFFFF' : locked ? theme.subtext : theme.primary}
             />
           </View>
           {locked ? (
@@ -104,13 +127,18 @@ export default function TopicsScreen({ navigation }) {
               <Ionicons name="lock-closed" size={16} color="#92400E" style={{ marginRight: 4 }} />
               <Text style={styles.proText}>Pro only</Text>
             </View>
+          ) : isCP ? (
+            <View style={[styles.proBadge, { backgroundColor: '#0284C7' }]}>
+              <Ionicons name="code-slash" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
+              <Text style={[styles.proText, { color: '#FFFFFF' }]}>VS Code Mode</Text>
+            </View>
           ) : (
             <Ionicons name="chevron-forward" size={26} color={theme.subtext} />
           )}
         </View>
 
         <Text style={[styles.topicTitle, { color: locked ? theme.subtext : theme.text }]}>
-          {topic}
+          {topic === 'CP' ? 'Competitive Programming' : topic}
         </Text>
         <Text style={[styles.topicDesc, { color: theme.subtext }]}>{label}</Text>
       </TouchableOpacity>

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import {
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import ServerModal from '../components/ServerModal';
+import { CLOUD_API_URL, getActiveBaseURL } from '../api/client';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -20,9 +22,20 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [serverModalVisible, setServerModalVisible] = useState(false);
+  const [activeServerUrl, setActiveServerUrl] = useState(CLOUD_API_URL);
 
   const { login } = useContext(AuthContext);
   const { theme, isDark, toggleTheme } = useContext(ThemeContext);
+
+  useEffect(() => {
+    updateActiveServer();
+  }, []);
+
+  const updateActiveServer = async () => {
+    const url = await getActiveBaseURL();
+    setActiveServerUrl(url);
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -40,13 +53,20 @@ export default function LoginScreen({ navigation }) {
       if (err.response?.data?.detail) {
         msg = err.response.data.detail;
       } else if (err.code === 'ECONNABORTED' || err.message?.includes('Network Error')) {
-        msg = 'Cannot connect to server. Ensure phone and PC are on the same Wi-Fi and backend is running.';
+        const currentUrl = await getActiveBaseURL();
+        if (currentUrl.includes('onrender.com')) {
+          msg = 'Cloud server is waking up (Render free tier take 20-30s). Please wait a moment and try again!';
+        } else {
+          msg = 'Cannot connect to Local PC. Check if PC is ON & backend is running, or tap below to switch to Cloud Server.';
+        }
       }
       setError(msg);
     } finally {
       setLoading(false);
     }
   };
+
+  const isCloudServer = activeServerUrl === CLOUD_API_URL;
 
   return (
     <KeyboardAvoidingView
@@ -71,6 +91,18 @@ export default function LoginScreen({ navigation }) {
           <Text style={[styles.subtitle, { color: theme.subtext }]}>
             Log in to continue your AI mock interviews
           </Text>
+
+          <TouchableOpacity
+            style={[styles.serverPill, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
+            onPress={() => setServerModalVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name={isCloudServer ? 'cloud-done-outline' : 'laptop-outline'} size={16} color={theme.primary} />
+            <Text style={[styles.serverPillText, { color: theme.text }]}>
+              {isCloudServer ? 'Server: Cloud (Render)' : 'Server: Local PC'}
+            </Text>
+            <Ionicons name="settings-outline" size={15} color={theme.subtext} />
+          </TouchableOpacity>
 
           {error ? (
             <View style={[styles.errorContainer, { backgroundColor: theme.errorBg }]}>
@@ -138,6 +170,11 @@ export default function LoginScreen({ navigation }) {
           </View>
         </View>
       </ScrollView>
+      <ServerModal
+        visible={serverModalVisible}
+        onClose={() => setServerModalVisible(false)}
+        onServerChanged={updateActiveServer}
+      />
     </KeyboardAvoidingView>
   );
 }

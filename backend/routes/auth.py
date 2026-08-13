@@ -140,3 +140,21 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)):
     return UserResponse.model_validate(current_user)
+
+
+class UpgradeRequest(BaseModel):
+    payment_method: str | None = None
+    transaction_id: str | None = None
+
+
+@router.post("/upgrade", response_model=UserResponse)
+def upgrade_plan(
+    payload: UpgradeRequest | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    current_user.plan = "pro"
+    db.commit()
+    db.refresh(current_user)
+    return UserResponse.model_validate(current_user)
+

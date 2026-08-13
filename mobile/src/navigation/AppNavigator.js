@@ -15,6 +15,7 @@ import TopicsScreen from '../screens/TopicsScreen';
 import ChatScreen from '../screens/ChatScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import PricingScreen from '../screens/PricingScreen';
+import CodeEditorScreen from '../screens/CodeEditorScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -86,6 +87,7 @@ function AppStackNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainTabNavigator} />
       <Stack.Screen name="Chat" component={ChatScreen} />
+      <Stack.Screen name="CPEditor" component={CodeEditorScreen} />
     </Stack.Navigator>
   );
 }

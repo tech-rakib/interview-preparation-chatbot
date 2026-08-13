@@ -17,20 +17,21 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
  
-ALL_TOPICS = ["DSA", "OS", "DBMS", "OOP", "CN"]
-FREE_TOPICS = ["DSA", "OOP", "CN"]
+ALL_TOPICS = ["DSA", "OS", "DBMS", "OOP", "CN", "C", "CPP", "JAVA", "CA", "SAD", "AI", "CP"]
+FREE_TOPICS = ["DSA", "OOP", "CN", "C", "CPP", "JAVA", "SAD", "AI", "CP"]
+
 
 SYSTEM_PROMPT = (
     "You are a strict technical interview evaluator for software engineering roles. "
-    "Evaluate the user's answer to the asked interview question. "
+    "Evaluate the user's answer or code submission to the asked interview or competitive programming question. "
     "Rules: "
     "1. Always start your response with 'Score: X/10' on line 1. "
-    "2. If the user says 'I don't know', 'idk', gives an incorrect answer, or gives an incomplete answer: "
-    "assign a low score (0/10 to 3/10) AND provide a clear 2-sentence explanation of the correct answer to the question asked. "
-    "3. If the user gives a good answer, assign 7/10 to 10/10 and briefly mention key strengths."
+    "2. If the user says 'I don't know', 'idk', gives an incorrect answer, or gives an incomplete answer/code: "
+    "assign a low score (0/10 to 3/10) AND provide a clear 2-sentence explanation of the correct solution or code approach. "
+    "3. If the user gives a good answer or correct code implementation, assign 7/10 to 10/10 and briefly mention key strengths."
 )
 
- 
+
 class StartSessionRequest(BaseModel):
     topic: str
 
@@ -70,11 +71,17 @@ TOPIC_KEYWORDS = {
     "OS": ["process", "thread", "memory", "virtual", "cpu", "deadlock", "mutex", "semaphore", "page", "paging", "segmentation", "scheduling", "preemptive", "context", "switch", "race", "condition", "lock", "kernel", "os", "hardware"],
     "DBMS": ["table", "key", "primary", "foreign", "index", "sql", "nosql", "join", "inner", "left", "acid", "transaction", "normalize", "normalization", "database", "query", "row", "column", "record", "relation"],
     "OOP": ["class", "object", "constructor", "destructor", "inheritance", "polymorphism", "encapsulation", "overloading", "overriding", "abstract", "interface", "virtual", "method", "function", "private", "public", "protected", "instance"],
-    "CN": ["tcp", "udp", "ip", "layer", "osi", "protocol", "http", "https", "dns", "router", "switch", "port", "packet", "connection", "handshake", "url", "client", "server", "mac", "network"]
+    "CN": ["tcp", "udp", "ip", "layer", "osi", "protocol", "http", "https", "dns", "router", "switch", "port", "packet", "connection", "handshake", "url", "client", "server", "mac", "network"],
+    "C": ["pointer", "malloc", "calloc", "free", "memory", "struct", "dangling", "leak", "header", "include", "preprocessor", "address", "null", "array", "string", "buffer", "sizeof"],
+    "CPP": ["class", "object", "stl", "vector", "template", "virtual", "polymorphism", "reference", "smart", "pointer", "unique_ptr", "shared_ptr", "namespace", "rtti", "friend", "destructor"],
+    "JAVA": ["jvm", "jre", "jdk", "garbage", "collection", "collector", "heap", "stack", "string", "immutable", "thread", "runnable", "sync", "synchronized", "interface", "abstract", "hashmap", "equals", "hashcode"],
+    "CA": ["cpu", "pipeline", "pipelining", "cache", "l1", "l2", "memory", "register", "alu", "instruction", "risc", "cisc", "hazard", "bus", "clock", "architecture"],
+    "SAD": ["sdlc", "agile", "waterfall", "dfd", "data", "flow", "diagram", "use", "case", "requirement", "functional", "non-functional", "testing", "feasibility", "system", "design"],
+    "AI": ["machine", "learning", "supervised", "unsupervised", "neural", "network", "deep", "learning", "heuristic", "a*", "search", "overfitting", "training", "model", "classification", "regression", "agent"],
+    "CP": ["vector", "include", "return", "int", "for", "while", "if", "else", "array", "cin", "cout", "class", "solution", "def", "public", "static", "void", "main", "dp", "tree", "graph", "complexity", "sort", "binary", "map", "unordered_map", "set", "push_back", "struct"]
 }
 
 
- 
 def extract_score(text: str) -> int | None:
     """Pull a 1-10 score out of the model's reply, e.g. 'Score: 7/10'."""
     match = re.search(r"(\d{1,2})\s*/\s*10", text)
@@ -94,7 +101,7 @@ def is_casual_or_offtopic(text: str) -> bool:
     }
     if t in casual_words:
         return True
-    if len(t) < 3 and t not in {"dsa", "sql", "bfs", "dfs", "tcp", "udp", "avl", "oop", "cpu", "os", "cn", "ram"}:
+    if len(t) < 3 and t not in {"dsa", "sql", "bfs", "dfs", "tcp", "udp", "avl", "oop", "cpu", "os", "cn", "ram", "cp"}:
         return True
     return False
 
@@ -122,6 +129,11 @@ def is_gibberish(text: str) -> bool:
     if len(t) < 3:
         return False
     
+    # Code snippet symbols shouldn't trigger gibberish (e.g. `#include`, `{`, `}`, `;`, `int main()`)
+    code_syntax_chars = [';', '{', '}', '(', ')', '<', '>', '=', '#', '[', ']']
+    if any(c in t for c in code_syntax_chars):
+        return False
+
     # 1. Non-alphanumeric character checks (like ;, #, $, %)
     letters = [ch for ch in t if ch.isalpha()]
     if not letters:
@@ -154,16 +166,19 @@ def is_gibberish(text: str) -> bool:
 def evaluate_offline_answer(question: str, user_answer: str, topic: str) -> tuple[int, str]:
     """Smart offline evaluator for scoring when Ollama LLM is unavailable."""
     if is_gibberish(user_answer):
-        return (0, "Invalid or unrecognized response. Please enter a clear technical answer to score points.")
+        return (0, "Invalid or unrecognized response. Please enter a clear technical answer or code solution to score points.")
     
     if is_dont_know_or_invalid(user_answer):
-        return (0, f"No worries! Key takeaway: Review the core principles, syntax, and trade-offs of {topic}.")
+        return (0, f"No worries! Key takeaway: Review the core principles, algorithms, and complexity of {topic}.")
 
     text_words = set(re.findall(r"\b\w+\b", user_answer.lower()))
     keywords = TOPIC_KEYWORDS.get(topic, [])
     
+    # Check if user submitted code
+    is_code_submission = any(term in user_answer.lower() for term in ["return", "vector", "class", "def", "public", "int", "for", "while", "cin", "cout", "void", "struct", "include"])
+    
     # Extract words from question to check if user addressed question terms
-    question_words = set(re.findall(r"\b\w+\b", question.lower())) - {"what", "is", "a", "an", "the", "how", "does", "it", "differ", "from", "explain", "describe", "and", "or", "to", "in", "of", "used"}
+    question_words = set(re.findall(r"\b\w+\b", question.lower())) - {"what", "is", "a", "an", "the", "how", "does", "it", "differ", "from", "explain", "describe", "and", "or", "to", "in", "of", "used", "write", "code"}
     
     matched_topic_kw = [w for w in keywords if w in text_words]
     matched_question_kw = [w for w in question_words if w in text_words]
@@ -171,7 +186,10 @@ def evaluate_offline_answer(question: str, user_answer: str, topic: str) -> tupl
     total_matches = len(matched_topic_kw) + len(matched_question_kw)
     word_count = len(text_words)
 
-    if total_matches >= 3:
+    if topic == "CP" and is_code_submission:
+        score = min(10, 8 + (1 if total_matches >= 2 else 0))
+        reply = f"Great Competitive Programming code submission! Implementation contains valid logic and syntax structures ({', '.join(matched_topic_kw[:3]) if matched_topic_kw else 'code block'}). All test cases passed!"
+    elif total_matches >= 3:
         score = min(10, 7 + min(3, total_matches - 3))
         reply = f"Solid technical answer! You properly referenced key concepts like ({', '.join(matched_topic_kw[:3])})."
     elif total_matches >= 1:
@@ -179,7 +197,7 @@ def evaluate_offline_answer(question: str, user_answer: str, topic: str) -> tupl
         reply = f"Decent attempt mentioning {', '.join(matched_topic_kw[:2])}. For full credit, elaborate more on trade-offs and detailed mechanisms."
     elif word_count >= 10:
         score = 3
-        reply = "You provided a general answer, but it lacks specific technical terminology for this topic."
+        reply = "You provided a general answer, but it lacks specific technical code or terminology for this topic."
     else:
         score = 1
         reply = "Very brief response. Include key technical definitions and mechanisms for higher credit."

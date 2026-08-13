@@ -73,6 +73,17 @@ export const AuthProvider = ({ children }) => {
     return res.data;
   };
 
+  const upgradeUserPlan = async (paymentMethod, transactionId) => {
+    const res = await api.post('/api/auth/upgrade', {
+      payment_method: paymentMethod,
+      transaction_id: transactionId,
+    });
+    const updatedUser = res.data;
+    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+    return updatedUser;
+  };
+
   const logout = async () => {
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('user');
@@ -89,10 +100,12 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
+        upgradeUserPlan,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
+
 

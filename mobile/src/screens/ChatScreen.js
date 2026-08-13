@@ -16,6 +16,8 @@ import api from '../api/client';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeContext } from '../context/ThemeContext';
 
+import * as Clipboard from 'expo-clipboard';
+
 export default function ChatScreen({ route, navigation }) {
   const { topic } = route.params || { topic: 'DSA' };
   const { theme, isDark, toggleTheme } = useContext(ThemeContext);
@@ -29,8 +31,23 @@ export default function ChatScreen({ route, navigation }) {
   const [error, setError] = useState('');
   const [summaryData, setSummaryData] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
 
   const flatListRef = useRef(null);
+
+  const handleCopyText = async (content, id) => {
+    try {
+      if (Clipboard && Clipboard.setStringAsync) {
+        await Clipboard.setStringAsync(content);
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(content);
+      }
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2200);
+    } catch (err) {
+      console.log('Copy failed:', err);
+    }
+  };
 
   useEffect(() => {
     async function startSession() {
@@ -131,6 +148,7 @@ export default function ChatScreen({ route, navigation }) {
 
   const renderMessage = ({ item }) => {
     const isUser = item.role === 'user';
+    const isCopied = copiedId === item.id;
 
     return (
       <View style={[styles.msgWrapper, isUser ? styles.msgWrapperUser : styles.msgWrapperBot]}>
@@ -142,12 +160,39 @@ export default function ChatScreen({ route, navigation }) {
               : { backgroundColor: theme.botBubble, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: theme.border },
           ]}
         >
-          {!isUser && item.score != null && (
-            <View style={[styles.scoreBadge, { backgroundColor: theme.scoreBg }]}>
-              <Ionicons name="star" size={14} color={theme.scoreText} />
-              <Text style={[styles.scoreText, { color: theme.scoreText }]}>Score: {item.score}/10</Text>
-            </View>
-          )}
+          <View style={styles.bubbleHeaderRow}>
+            {!isUser && item.score != null && (
+              <View style={[styles.scoreBadge, { backgroundColor: theme.scoreBg }]}>
+                <Ionicons name="star" size={14} color={theme.scoreText} />
+                <Text style={[styles.scoreText, { color: theme.scoreText }]}>Score: {item.score}/10</Text>
+              </View>
+            )}
+            
+            <TouchableOpacity
+              style={[
+                styles.copyButton,
+                { backgroundColor: isUser ? 'rgba(255,255,255,0.2)' : theme.inputBg }
+              ]}
+              onPress={() => handleCopyText(item.content, item.id)}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name={isCopied ? 'checkmark-circle' : 'copy-outline'}
+                size={16}
+                color={isCopied ? '#10B981' : isUser ? '#FFFFFF' : theme.subtext}
+              />
+              <Text
+                style={[
+                  styles.copyBtnText,
+                  { color: isCopied ? '#10B981' : isUser ? '#FFFFFF' : theme.subtext },
+                ]}
+              >
+                {isCopied ? 'Copied!' : 'Copy'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           <Text
             style={[
               styles.msgText,
@@ -419,6 +464,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
+  bubbleHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    gap: 8,
+  },
   scoreBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -426,12 +478,24 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     alignSelf: 'flex-start',
-    marginBottom: 8,
     gap: 6,
   },
   scoreText: {
     fontSize: 13,
     fontWeight: '800',
+  },
+  copyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginLeft: 'auto',
+    gap: 4,
+  },
+  copyBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   msgText: {
     fontSize: 17,
