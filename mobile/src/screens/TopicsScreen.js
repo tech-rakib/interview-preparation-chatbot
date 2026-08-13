@@ -138,7 +138,7 @@ export default function TopicsScreen({ navigation }) {
         </View>
 
         <Text style={[styles.topicTitle, { color: locked ? theme.subtext : theme.text }]}>
-          {topic === 'CP' ? 'Competitive Programming' : topic}
+          {topic}
         </Text>
         <Text style={[styles.topicDesc, { color: theme.subtext }]}>{label}</Text>
       </TouchableOpacity>
