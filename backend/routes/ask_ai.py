@@ -182,7 +182,13 @@ async def _call_cloud_free_ask(messages: list[dict]) -> str:
         "temperature": 0.7
     }
 
-    async with httpx.AsyncClient(timeout=25.0) as client:
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/plain, application/json",
+        "Content-Type": "application/json"
+    }
+
+    async with httpx.AsyncClient(timeout=25.0, headers=headers) as client:
         res = await client.post("https://text.pollinations.ai/", json=payload)
         res.raise_for_status()
         text = res.text.strip()
