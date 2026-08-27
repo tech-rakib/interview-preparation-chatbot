@@ -20,11 +20,15 @@ start "Backend Server" /D "%~dp0backend" cmd /k "call venv\Scripts\activate && u
 echo 5. Waiting 3 seconds for Backend to start...
 timeout /t 3 >nul
 
-echo 6. Setting up ADB Port Forwarding for Android Emulator...
+echo 6. Setting up ADB Port Forwarding (resetting offline devices)...
 if exist "%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" (
+    "%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" kill-server >nul 2>&1
+    "%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" start-server >nul 2>&1
     "%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" reverse tcp:8081 tcp:8081 >nul 2>&1
     "%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" reverse tcp:8000 tcp:8000 >nul 2>&1
 ) else (
+    adb kill-server >nul 2>&1
+    adb start-server >nul 2>&1
     adb reverse tcp:8081 tcp:8081 >nul 2>&1
     adb reverse tcp:8000 tcp:8000 >nul 2>&1
 )
@@ -35,7 +39,7 @@ for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do (
 )
 
 echo 8. Starting React Native Mobile App (Expo Go)...
-start "Mobile App Server (Expo)" /D "%~dp0mobile" cmd /k "npx expo start --tunnel"
+start "Mobile App Server (Expo)" /D "%~dp0mobile" cmd /k "npx expo start --clear"
 
 echo.
 echo ========================================================
