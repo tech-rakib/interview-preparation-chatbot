@@ -17,7 +17,7 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434").rstrip("/")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
 OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "90"))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 ASK_AI_SYSTEM_PROMPT = (
@@ -156,15 +156,31 @@ async def _call_gemini_ask(messages: list[dict]) -> str:
             "parts": [{"text": system_text}]
         }
 
+    candidate_models = [GEMINI_MODEL, "gemini-3.6-flash", "gemini-2.5-flash", "gemini-flash-latest"]
+    unique_models = list(dict.fromkeys(candidate_models))
+
+    last_error = None
     async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(
-            f"{GEMINI_API_URL}?key={GEMINI_API_KEY}",
-            json=payload,
-            headers={"Content-Type": "application/json"}
-        )
-        response.raise_for_status()
-        data = response.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"]
+        for model in unique_models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+            try:
+                response = await client.post(
+                    url,
+                    json=payload,
+                    headers={"Content-Type": "application/json"}
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        text_parts = [p.get("text", "") for p in parts if "text" in p]
+                        if text_parts:
+                            return "\n".join(text_parts).strip()
+            except Exception as e:
+                last_error = e
+
+    raise last_error or Exception("Gemini API request failed across candidate models")
 
 
 async def _call_cloud_free_ask(messages: list[dict]) -> str:
