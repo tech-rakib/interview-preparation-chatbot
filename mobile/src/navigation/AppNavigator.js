@@ -15,7 +15,7 @@ import TopicsScreen from '../screens/TopicsScreen';
 import ChatScreen from '../screens/ChatScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import PricingScreen from '../screens/PricingScreen';
-import CodeEditorScreen from '../screens/CodeEditorScreen';
+import AskAIScreen from '../screens/AskAIScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -45,6 +45,8 @@ function MainTabNavigator() {
           let iconName;
           if (route.name === 'TopicsMain') {
             iconName = 'grid-outline';
+          } else if (route.name === 'AskAIMain') {
+            iconName = 'chatbubble-ellipses-outline';
           } else if (route.name === 'HistoryMain') {
             iconName = 'time-outline';
           } else if (route.name === 'PricingMain') {
@@ -58,6 +60,11 @@ function MainTabNavigator() {
         name="TopicsMain"
         component={TopicsScreen}
         options={{ title: 'Topics' }}
+      />
+      <Tab.Screen
+        name="AskAIMain"
+        component={AskAIScreen}
+        options={{ title: 'Ask AI' }}
       />
       <Tab.Screen
         name="HistoryMain"
@@ -87,7 +94,6 @@ function AppStackNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainTabNavigator} />
       <Stack.Screen name="Chat" component={ChatScreen} />
-      <Stack.Screen name="CPEditor" component={CodeEditorScreen} />
     </Stack.Navigator>
   );
 }

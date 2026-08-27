@@ -51,3 +51,31 @@ class Message(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     session = relationship("InterviewSession", back_populates="messages")
+
+
+class AskAIConversation(Base):
+    """A free-form Ask AI conversation belonging to a user."""
+
+    __tablename__ = "ask_ai_conversations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(255), nullable=False, default="New Chat")
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    user = relationship("User")
+    messages = relationship("AskAIMessage", back_populates="conversation", cascade="all, delete-orphan")
+
+
+class AskAIMessage(Base):
+    """A single message inside an Ask AI conversation."""
+
+    __tablename__ = "ask_ai_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(Integer, ForeignKey("ask_ai_conversations.id", ondelete="CASCADE"), nullable=False)
+    role = Column(String(20), nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    conversation = relationship("AskAIConversation", back_populates="messages")

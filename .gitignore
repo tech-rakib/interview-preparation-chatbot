@@ -20,3 +20,5 @@ mobile/dist/
 
 # Misc
 .DS_Store
+mobile/dist-test/
+

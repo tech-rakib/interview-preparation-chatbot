@@ -10,6 +10,11 @@ export const setUnauthorizedCallback = (callback) => {
   onUnauthorizedCallback = callback;
 };
 
+export const isCloudServer = (url) => {
+  if (!url) return true;
+  return url.replace(/\/+$/, '') === CLOUD_API_URL.replace(/\/+$/, '');
+};
+
 export const getLocalDevURL = () => {
   try {
     const ConstantsModule = require('expo-constants');
@@ -30,7 +35,9 @@ export const getLocalDevURL = () => {
   } catch (e) {
     // fallback if expo-constants is unavailable
   }
-  return 'http://10.0.2.2:8000';
+
+  // Standalone APK cannot auto-detect PC IP — user must enter LAN IP in Server Settings.
+  return 'http://192.168.1.100:8000';
 };
 
 export const getActiveBaseURL = async () => {
@@ -42,7 +49,12 @@ export const getActiveBaseURL = async () => {
   } catch (e) {
     // fallback
   }
-  // Always default to Cloud Server (Render) so app works when PC is OFF!
+
+  // During Expo development, default to local backend where Ollama runs.
+  if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    return getLocalDevURL();
+  }
+
   return CLOUD_API_URL;
 };
 
@@ -65,7 +77,7 @@ export const resetServerUrl = async () => {
 
 const api = axios.create({
   baseURL: CLOUD_API_URL,
-  timeout: 60000, // 60 seconds to allow Render cold start
+  timeout: 90000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -101,5 +113,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-
-

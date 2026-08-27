@@ -27,7 +27,6 @@ const TOPIC_LABELS = {
   CA: 'Computer Architecture',
   SAD: 'System Analysis and Design',
   AI: 'Artificial Intelligence',
-  CP: 'Competitive Programming (VS Code Editor)',
 };
 
 const TOPIC_ICONS = {
@@ -39,10 +38,9 @@ const TOPIC_ICONS = {
   C: 'code-working-outline',
   CPP: 'terminal-outline',
   JAVA: 'cafe-outline',
-  CA: 'cpu-outline',
+  CA: 'desktop-outline',
   SAD: 'git-network-outline',
   AI: 'sparkles-outline',
-  CP: 'terminal',
 };
 
 export default function TopicsScreen({ navigation }) {
@@ -85,24 +83,18 @@ export default function TopicsScreen({ navigation }) {
 
   const handleSelectTopic = (topic, locked) => {
     if (locked) return;
-    if (topic === 'CP') {
-      navigation.navigate('CPEditor', { topic });
-    } else {
-      navigation.navigate('Chat', { topic });
-    }
+    navigation.navigate('Chat', { topic });
   };
 
   const renderTopicItem = ({ item }) => {
     const { topic, locked } = item;
     const label = TOPIC_LABELS[topic] || topic;
     const iconName = TOPIC_ICONS[topic] || 'document-text-outline';
-    const isCP = topic === 'CP';
-
     return (
       <TouchableOpacity
         style={[
           styles.card,
-          { backgroundColor: theme.card, borderColor: isCP ? '#007ACC' : theme.border },
+          { backgroundColor: theme.card, borderColor: theme.border },
           locked && { backgroundColor: theme.inputBg, opacity: 0.7 },
         ]}
         onPress={() => handleSelectTopic(topic, locked)}
@@ -113,24 +105,19 @@ export default function TopicsScreen({ navigation }) {
           <View
             style={[
               styles.iconBox,
-              { backgroundColor: isCP ? '#007ACC' : locked ? theme.inputBg : theme.primaryLight },
+              { backgroundColor: locked ? theme.inputBg : theme.primaryLight },
             ]}
           >
             <Ionicons
               name={iconName}
               size={32}
-              color={isCP ? '#FFFFFF' : locked ? theme.subtext : theme.primary}
+              color={locked ? theme.subtext : theme.primary}
             />
           </View>
           {locked ? (
             <View style={styles.proBadge}>
               <Ionicons name="lock-closed" size={16} color="#92400E" style={{ marginRight: 4 }} />
               <Text style={styles.proText}>Pro only</Text>
-            </View>
-          ) : isCP ? (
-            <View style={[styles.proBadge, { backgroundColor: '#0284C7' }]}>
-              <Ionicons name="code-slash" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
-              <Text style={[styles.proText, { color: '#FFFFFF' }]}>VS Code Mode</Text>
             </View>
           ) : (
             <Ionicons name="chevron-forward" size={26} color={theme.subtext} />

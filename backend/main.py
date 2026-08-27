@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine, SessionLocal
 import models  # noqa: F401 - ensures models are registered before create_all
 from models import Question
-from routes import auth, chat, history
+from routes import auth, chat, history, ask_ai
 
 # Create tables if they don't already exist (database.sql also does this).
 Base.metadata.create_all(bind=engine)
@@ -115,15 +115,7 @@ def seed_default_questions():
             ("AI", "Explain Turing Test and its significance in evaluating AI systems."),
             ("AI", "What is the difference between Precision, Recall, and F1-Score in ML model evaluation?"),
             ("AI", "What is a Decision Tree algorithm and how does Information Gain / Entropy work?"),
-            # Competitive Programming (CP)
-            ("CP", "Problem: Two Sum\nGiven an array of integers nums and an integer target, write a function solution in C++/Python that returns indices of the two numbers such that they add up to target.\nInput: nums = [2,7,11,15], target = 9\nOutput: [0,1]"),
-            ("CP", "Problem: Reverse a Linked List\nWrite a raw C++ or Python function to reverse a singly linked list and return its head node.\nInput: 1 -> 2 -> 3 -> 4 -> 5 -> NULL\nOutput: 5 -> 4 -> 3 -> 2 -> 1 -> NULL"),
-            ("CP", "Problem: Maximum Subarray Sum (Kadane's Algorithm)\nGiven an integer array nums, find the subarray with the largest sum and write code to return its sum.\nInput: nums = [-2,1,-3,4,-1,2,1,-5,4]\nOutput: 6 (Subarray [4,-1,2,1])"),
-            ("CP", "Problem: Valid Parentheses\nGiven a string s containing just the characters '(', ')', '{', '}', '[' and ']', write a code solution to determine if the input string is valid.\nInput: s = \"()[]{}\"\nOutput: true"),
-            ("CP", "Problem: Palindrome Number\nGiven an integer x, write a function to return true if x is a palindrome, and false otherwise.\nInput: x = 121\nOutput: true"),
-            ("CP", "Problem: Binary Search\nGiven an array of integers nums which is sorted in ascending order, and an integer target, write a C++/Python solution to search target in nums.\nInput: nums = [-1,0,3,5,9,12], target = 9\nOutput: 4"),
-            ("CP", "Problem: Climbing Stairs (DP)\nYou are climbing a staircase. It takes n steps to reach the top. Each time you can either climb 1 or 2 steps. Write dynamic programming code to compute total distinct ways to reach top.\nInput: n = 3\nOutput: 3"),
-            ("CP", "Problem: Find Missing Number\nGiven an array nums containing n distinct numbers in the range [0, n], write code to return the only number in the range that is missing from the array.\nInput: nums = [3,0,1]\nOutput: 2"),
+
         ]
         
         inserted_count = 0
@@ -160,6 +152,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(history.router)
+app.include_router(ask_ai.router)
 
 
 @app.get("/")

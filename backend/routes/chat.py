@@ -17,19 +17,10 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
  
-ALL_TOPICS = ["DSA", "OS", "DBMS", "OOP", "CN", "C", "CPP", "JAVA", "CA", "SAD", "AI", "CP"]
-FREE_TOPICS = ["DSA", "OOP", "CN", "C", "CPP", "JAVA", "SAD", "AI", "CP"]
+ALL_TOPICS = ["DSA", "OS", "DBMS", "OOP", "CN", "C", "CPP", "JAVA", "CA", "SAD", "AI"]
+FREE_TOPICS = ["DSA", "OOP", "CN", "C", "CPP", "JAVA", "SAD", "AI"]
 
 
-SYSTEM_PROMPT = (
-    "You are a strict technical interview evaluator for software engineering roles. "
-    "Evaluate the user's answer or code submission to the asked interview or competitive programming question. "
-    "Rules: "
-    "1. Always start your response with 'Score: X/10' on line 1. "
-    "2. If the user says 'I don't know', 'idk', gives an incorrect answer, or gives an incomplete answer/code: "
-    "assign a low score (0/10 to 3/10) AND provide a clear 2-sentence explanation of the correct solution or code approach. "
-    "3. If the user gives a good answer or correct code implementation, assign 7/10 to 10/10 and briefly mention key strengths."
-)
 
 
 class StartSessionRequest(BaseModel):
@@ -50,7 +41,6 @@ class SendMessageRequest(BaseModel):
 
 class SendMessageResponse(BaseModel):
     reply: str
-    score: int | None = None
     next_question: str | None = None
 
 
@@ -73,22 +63,13 @@ TOPIC_KEYWORDS = {
     "OOP": ["class", "object", "constructor", "destructor", "inheritance", "polymorphism", "encapsulation", "overloading", "overriding", "abstract", "interface", "virtual", "method", "function", "private", "public", "protected", "instance"],
     "CN": ["tcp", "udp", "ip", "layer", "osi", "protocol", "http", "https", "dns", "router", "switch", "port", "packet", "connection", "handshake", "url", "client", "server", "mac", "network"],
     "C": ["pointer", "malloc", "calloc", "free", "memory", "struct", "dangling", "leak", "header", "include", "preprocessor", "address", "null", "array", "string", "buffer", "sizeof"],
-    "CPP": ["class", "object", "stl", "vector", "template", "virtual", "polymorphism", "reference", "smart", "pointer", "unique_ptr", "shared_ptr", "namespace", "rtti", "friend", "destructor"],
-    "JAVA": ["jvm", "jre", "jdk", "garbage", "collection", "collector", "heap", "stack", "string", "immutable", "thread", "runnable", "sync", "synchronized", "interface", "abstract", "hashmap", "equals", "hashcode"],
+    "CPP": ["class", "object", "stl", "vector", "template", "virtual", "polymorphism", "reference", "smart", "pointer", "unique_ptr", "shared_ptr", "namespace", "rtti", "friend", "destructor", "encapsulation", "inheritance", "overloading", "overriding"],
+    "JAVA": ["jvm", "jre", "jdk", "garbage", "collection", "collector", "heap", "stack", "string", "immutable", "thread", "runnable", "sync", "synchronized", "interface", "abstract", "hashmap", "equals", "hashcode", "stream", "lambda", "generics"],
     "CA": ["cpu", "pipeline", "pipelining", "cache", "l1", "l2", "memory", "register", "alu", "instruction", "risc", "cisc", "hazard", "bus", "clock", "architecture"],
     "SAD": ["sdlc", "agile", "waterfall", "dfd", "data", "flow", "diagram", "use", "case", "requirement", "functional", "non-functional", "testing", "feasibility", "system", "design"],
     "AI": ["machine", "learning", "supervised", "unsupervised", "neural", "network", "deep", "learning", "heuristic", "a*", "search", "overfitting", "training", "model", "classification", "regression", "agent"],
-    "CP": ["vector", "include", "return", "int", "for", "while", "if", "else", "array", "cin", "cout", "class", "solution", "def", "public", "static", "void", "main", "dp", "tree", "graph", "complexity", "sort", "binary", "map", "unordered_map", "set", "push_back", "struct"]
 }
 
-
-def extract_score(text: str) -> int | None:
-    """Pull a 1-10 score out of the model's reply, e.g. 'Score: 7/10'."""
-    match = re.search(r"(\d{1,2})\s*/\s*10", text)
-    if not match:
-        return None
-    score = int(match.group(1))
-    return max(0, min(10, score))
 
 
 def is_casual_or_offtopic(text: str) -> bool:
@@ -101,7 +82,7 @@ def is_casual_or_offtopic(text: str) -> bool:
     }
     if t in casual_words:
         return True
-    if len(t) < 3 and t not in {"dsa", "sql", "bfs", "dfs", "tcp", "udp", "avl", "oop", "cpu", "os", "cn", "ram", "cp"}:
+    if len(t) < 3 and t not in {"dsa", "sql", "bfs", "dfs", "tcp", "udp", "avl", "oop", "cpu", "os", "cn", "ram"}:
         return True
     return False
 
@@ -163,46 +144,27 @@ def is_gibberish(text: str) -> bool:
     return False
 
 
-def evaluate_offline_answer(question: str, user_answer: str, topic: str) -> tuple[int, str]:
-    """Smart offline evaluator for scoring when Ollama LLM is unavailable."""
+def evaluate_offline_answer(question: str, user_answer: str, topic: str) -> str:
+    """Smart offline evaluator for feedback when Ollama LLM is unavailable."""
     if is_gibberish(user_answer):
-        return (0, "Invalid or unrecognized response. Please enter a clear technical answer or code solution to score points.")
-    
+        return "Invalid or unrecognized response. Please enter a clear technical answer or code solution."
+
     if is_dont_know_or_invalid(user_answer):
-        return (0, f"No worries! Key takeaway: Review the core principles, algorithms, and complexity of {topic}.")
+        return f"No worries! Review the core principles, algorithms, and complexity of {topic} to improve."
 
     text_words = set(re.findall(r"\b\w+\b", user_answer.lower()))
     keywords = TOPIC_KEYWORDS.get(topic, [])
-    
-    # Check if user submitted code
-    is_code_submission = any(term in user_answer.lower() for term in ["return", "vector", "class", "def", "public", "int", "for", "while", "cin", "cout", "void", "struct", "include"])
-    
-    # Extract words from question to check if user addressed question terms
-    question_words = set(re.findall(r"\b\w+\b", question.lower())) - {"what", "is", "a", "an", "the", "how", "does", "it", "differ", "from", "explain", "describe", "and", "or", "to", "in", "of", "used", "write", "code"}
-    
+
     matched_topic_kw = [w for w in keywords if w in text_words]
-    matched_question_kw = [w for w in question_words if w in text_words]
-    
-    total_matches = len(matched_topic_kw) + len(matched_question_kw)
-    word_count = len(text_words)
 
-    if topic == "CP" and is_code_submission:
-        score = min(10, 8 + (1 if total_matches >= 2 else 0))
-        reply = f"Great Competitive Programming code submission! Implementation contains valid logic and syntax structures ({', '.join(matched_topic_kw[:3]) if matched_topic_kw else 'code block'}). All test cases passed!"
-    elif total_matches >= 3:
-        score = min(10, 7 + min(3, total_matches - 3))
-        reply = f"Solid technical answer! You properly referenced key concepts like ({', '.join(matched_topic_kw[:3])})."
-    elif total_matches >= 1:
-        score = random.randint(5, 6)
-        reply = f"Decent attempt mentioning {', '.join(matched_topic_kw[:2])}. For full credit, elaborate more on trade-offs and detailed mechanisms."
-    elif word_count >= 10:
-        score = 3
-        reply = "You provided a general answer, but it lacks specific technical code or terminology for this topic."
+    if len(matched_topic_kw) >= 3:
+        return f"Solid technical answer! You properly referenced key concepts like ({', '.join(matched_topic_kw[:3])})."
+    elif len(matched_topic_kw) >= 1:
+        return f"Decent attempt mentioning {', '.join(matched_topic_kw[:2])}. Elaborate more on trade-offs and detailed mechanisms."
+    elif len(text_words) >= 10:
+        return "You provided a general answer, but it lacks specific technical terminology for this topic."
     else:
-        score = 1
-        reply = "Very brief response. Include key technical definitions and mechanisms for higher credit."
-
-    return (score, reply)
+        return "Very brief response. Include key technical definitions and mechanisms for higher credit."
 
 
 async def call_ollama(messages: list[dict]) -> str:
@@ -290,8 +252,9 @@ async def send_message(
     try:
         session = get_owned_session(payload.session_id, current_user, db)
 
-        # Save user message to database
-        user_message = Message(session_id=session.id, role="user", content=payload.content)
+        raw_content = payload.content
+
+        user_message = Message(session_id=session.id, role="user", content=raw_content)
         db.add(user_message)
         db.commit()
 
@@ -302,7 +265,7 @@ async def send_message(
             .order_by(Message.id.asc())
             .all()
         )
-        
+
         # Get asked bot questions (ignore bot evaluation feedback messages)
         asked_questions = [m.content for m in history if m.role == "bot" and m.score is None and not m.content.startswith("Hello") and not m.content.startswith("Let's focus")]
         last_bot_question = asked_questions[-1] if asked_questions else f"What are key concepts of {session.topic}?"
@@ -311,7 +274,7 @@ async def send_message(
         all_topic_questions = db.query(Question).filter(Question.topic == session.topic).all()
         asked_texts = set(asked_questions)
         unasked = [q for q in all_topic_questions if q.question_text not in asked_texts]
-        
+
         if unasked:
             next_q = random.choice(unasked).question_text
         elif all_topic_questions:
@@ -320,53 +283,60 @@ async def send_message(
             next_q = f"Can you elaborate on key mechanisms and complexity for {session.topic}?"
 
         # 1. Handle casual greetings (e.g. "hi", "hello")
-        if is_casual_or_offtopic(payload.content):
+        if is_casual_or_offtopic(raw_content):
             reply = f"Hello! Let's stay focused on our current question:\n\"{last_bot_question}\"\n\nPlease type your technical explanation when you are ready!"
             bot_message = Message(session_id=session.id, role="bot", content=reply, score=None)
             db.add(bot_message)
             db.commit()
-            return SendMessageResponse(reply=reply, score=None, next_question=last_bot_question)
+            return SendMessageResponse(reply=reply, next_question=last_bot_question)
 
         # 2. Process evaluation via Ollama LLM (or smart local offline fallback)
         recent_history = history[-4:]
+
         ollama_messages = [
             {
-                "role": "system", 
-                "content": f"{SYSTEM_PROMPT}\nTopic: {session.topic}.\nQuestion asked: '{last_bot_question}'."
+                "role": "system",
+                "content": (
+                    f"You are a helpful technical mentor. Give concise feedback on the user's "
+                    f"answer for topic: {session.topic}.\n"
+                    f"Question asked: '{last_bot_question}'.\n"
+                    f"Rules: Do NOT give a score or number rating. Just give 2-3 sentences of constructive feedback. "
+                    f"If the code/answer is correct, say so and mention one strength. "
+                    f"If wrong or incomplete, briefly explain what is wrong and what the correct approach is."
+                )
             }
         ]
         for msg in recent_history:
             role = "assistant" if msg.role == "bot" else "user"
             ollama_messages.append({"role": role, "content": msg.content})
 
-        score = None
         reply = ""
 
         try:
             raw_reply = await call_ollama(ollama_messages)
-            score = extract_score(raw_reply)
-            clean_reply = re.sub(r"Score:\s*\d{1,2}\s*/\s*10", "", raw_reply).strip()
-            reply = clean_reply if clean_reply else "Review core concepts of this topic for software engineering interviews."
+            # Strip any accidental score lines the model might output
+            reply = re.sub(r"Score:\s*\d{1,2}\s*/\s*10", "", raw_reply).strip()
+            reply = reply if reply else "Keep practicing! Review the problem constraints carefully."
         except Exception:
             # Smart local offline fallback evaluation
-            score, reply = evaluate_offline_answer(last_bot_question, payload.content, session.topic)
+            reply = evaluate_offline_answer(last_bot_question, raw_content, session.topic)
 
-        # Save evaluation message to DB
-        bot_eval = Message(session_id=session.id, role="bot", content=reply, score=score)
+        # Save evaluation message to DB (score=None always now)
+        bot_eval = Message(session_id=session.id, role="bot", content=reply, score=None)
         db.add(bot_eval)
 
         # Save next question message to DB
         bot_next = Message(session_id=session.id, role="bot", content=next_q, score=None)
         db.add(bot_next)
-        
+
         db.commit()
 
-        return SendMessageResponse(reply=reply, score=score, next_question=next_q)
+        return SendMessageResponse(reply=reply, next_question=next_q)
     except HTTPException:
         raise
     except Exception as exc:
-        fallback_reply = "Thank you for your response! Here is the next question to practice."
-        return SendMessageResponse(reply=fallback_reply, score=0, next_question="What are main trade-offs in this approach?")
+        fallback_reply = "Keep practicing! Review the problem constraints carefully."
+        return SendMessageResponse(reply=fallback_reply, next_question="What are the main considerations for solving this type of problem?")
 
 
 
