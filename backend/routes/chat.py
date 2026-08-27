@@ -156,7 +156,7 @@ def evaluate_offline_answer(question: str, user_answer: str, topic: str) -> tupl
     if is_dont_know_or_invalid(user_answer):
         return (
             f"No worries! Review the core principles, algorithms, and complexity of {topic} to improve.",
-            2,
+            0,
         )
 
     text_words = set(re.findall(r"\b\w+\b", user_answer.lower()))
@@ -177,12 +177,12 @@ def evaluate_offline_answer(question: str, user_answer: str, topic: str) -> tupl
     elif len(text_words) >= 10:
         return (
             "You provided a general answer, but it lacks specific technical terminology for this topic.",
-            5,
+            2,
         )
     else:
         return (
-            "Very brief response. Include key technical definitions and mechanisms for higher credit.",
-            3,
+            "Incorrect or non-technical response. Please include relevant technical concepts for credit.",
+            0,
         )
 
 
@@ -313,7 +313,7 @@ async def send_message(
             score_val = 0
         elif is_dont_know_or_invalid(raw_content):
             reply = f"No worries! Review the core principles and algorithms of {session.topic} to improve."
-            score_val = 2
+            score_val = 0
         else:
             # 3. Process evaluation via Ollama LLM or keyword engine
             recent_history = history[-4:]

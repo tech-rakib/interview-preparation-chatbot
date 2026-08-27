@@ -90,7 +90,7 @@ export default function RegisterScreen({ navigation }) {
               <Ionicons name="person-outline" size={24} color={theme.subtext} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: theme.text }]}
-                placeholder="John Doe"
+                placeholder="Rakib Hossen"
                 value={name}
                 onChangeText={setName}
                 placeholderTextColor={theme.subtext}
