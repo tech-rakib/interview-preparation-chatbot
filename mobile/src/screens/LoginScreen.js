@@ -74,7 +74,14 @@ export default function LoginScreen({ navigation }) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <TouchableOpacity
+            style={[styles.serverToggle, { backgroundColor: theme.inputBg }]}
+            onPress={() => setServerModalVisible(true)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="settings-outline" size={20} color={theme.subtext} />
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[styles.themeToggle, { backgroundColor: theme.inputBg }]}
             onPress={toggleTheme}
@@ -91,18 +98,6 @@ export default function LoginScreen({ navigation }) {
           <Text style={[styles.subtitle, { color: theme.subtext }]}>
             Log in to continue your AI mock interviews
           </Text>
-
-          <TouchableOpacity
-            style={[styles.serverPill, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
-            onPress={() => setServerModalVisible(true)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name={isCloudServer ? 'cloud-done-outline' : 'laptop-outline'} size={16} color={theme.primary} />
-            <Text style={[styles.serverPillText, { color: theme.text }]}>
-              {isCloudServer ? 'Server: Cloud (Render)' : 'Server: Local PC'}
-            </Text>
-            <Ionicons name="settings-outline" size={15} color={theme.subtext} />
-          </TouchableOpacity>
 
           {error ? (
             <View style={[styles.errorContainer, { backgroundColor: theme.errorBg }]}>
@@ -195,6 +190,13 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 6,
     position: 'relative',
+  },
+  serverToggle: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    padding: 10,
+    borderRadius: 12,
   },
   themeToggle: {
     position: 'absolute',
