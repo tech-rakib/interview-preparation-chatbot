@@ -132,51 +132,57 @@ export default function TopicsScreen({ navigation }) {
     );
   };
 
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <Text style={[styles.heading, { color: theme.text }]}>Choose a Topic</Text>
+      <Text style={[styles.subheading, { color: theme.subtext }]}>
+        Pick a topic to start your interactive AI mock interview.
+      </Text>
+
+      {error ? (
+        <TouchableOpacity
+          style={[styles.errorBanner, { backgroundColor: theme.errorBg }]}
+          onPress={() => {
+            if (error.toLowerCase().includes('credentials') || error.toLowerCase().includes('validate')) {
+              logout();
+            } else {
+              fetchTopics();
+            }
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="alert-circle" size={20} color={theme.errorText} />
+          <Text style={[styles.errorText, { color: theme.errorText }]}>
+            {error} {error.toLowerCase().includes('credentials') ? '(Tap to re-login)' : '(Tap to retry)'}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
+    </View>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Topics" />
 
       <View style={styles.content}>
-        <Text style={[styles.heading, { color: theme.text }]}>Choose a Topic</Text>
-        <Text style={[styles.subheading, { color: theme.subtext }]}>
-          Pick a topic to start your interactive AI mock interview.
-        </Text>
-
-        {error ? (
-          <TouchableOpacity
-            style={[styles.errorBanner, { backgroundColor: theme.errorBg }]}
-            onPress={() => {
-              if (error.toLowerCase().includes('credentials') || error.toLowerCase().includes('validate')) {
-                logout();
-              } else {
-                fetchTopics();
-              }
-            }}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="alert-circle" size={20} color={theme.errorText} />
-            <Text style={[styles.errorText, { color: theme.errorText }]}>
-              {error} {error.toLowerCase().includes('credentials') ? '(Tap to re-login)' : '(Tap to retry)'}
-            </Text>
-          </TouchableOpacity>
-        ) : null}
-
-        {loading ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={theme.primary} />
-            <Text style={[styles.loadingText, { color: theme.subtext }]}>Loading interview topics...</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={topics}
-            keyExtractor={(item) => item.topic}
-            renderItem={renderTopicItem}
-            contentContainerStyle={styles.listContainer}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
-            }
-          />
-        )}
+        <FlatList
+          data={loading ? [] : topics}
+          keyExtractor={(item) => item.topic}
+          renderItem={renderTopicItem}
+          contentContainerStyle={styles.listContainer}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={
+            loading ? (
+              <View style={styles.centerContainer}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.loadingText, { color: theme.subtext }]}>Loading interview topics...</Text>
+              </View>
+            ) : null
+          }
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
+          }
+        />
       </View>
     </View>
   );
@@ -189,6 +195,8 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 18,
+  },
+  headerContainer: {
     paddingTop: 18,
   },
   heading: {

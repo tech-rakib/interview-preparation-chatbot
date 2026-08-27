@@ -33,12 +33,11 @@ function MainTabNavigator() {
           backgroundColor: theme.card,
           borderTopWidth: 1,
           borderTopColor: theme.border,
-          height: 64,
-          paddingBottom: 10,
+          paddingBottom: 8,
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 14,
+          fontSize: 12,
           fontWeight: '600',
         },
         tabBarIcon: ({ color, size }) => {

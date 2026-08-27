@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
 export const CLOUD_API_URL = 'https://interview-preparation-chatbot-wq1z.onrender.com';
 export const STORAGE_KEY_SERVER = 'user_server_url';
@@ -17,8 +18,6 @@ export const isCloudServer = (url) => {
 
 export const getLocalDevURL = () => {
   try {
-    const ConstantsModule = require('expo-constants');
-    const Constants = ConstantsModule.default || ConstantsModule;
     const uri =
       Constants?.expoConfig?.hostUri ||
       Constants?.manifest?.debuggerHost ||

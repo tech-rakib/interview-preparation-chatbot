@@ -88,45 +88,51 @@ export default function HistoryScreen() {
     );
   };
 
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <Text style={[styles.heading, { color: theme.text }]}>Session History</Text>
+      <Text style={[styles.subheading, { color: theme.subtext }]}>
+        Review your past AI interview sessions & scores.
+      </Text>
+
+      {error ? (
+        <View style={[styles.errorBanner, { backgroundColor: theme.errorBg }]}>
+          <Ionicons name="alert-circle" size={20} color={theme.errorText} />
+          <Text style={[styles.errorText, { color: theme.errorText }]}>{error}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="History" />
 
       <View style={styles.content}>
-        <Text style={[styles.heading, { color: theme.text }]}>Session History</Text>
-        <Text style={[styles.subheading, { color: theme.subtext }]}>
-          Review your past AI interview sessions & scores.
-        </Text>
-
-        {error ? (
-          <View style={[styles.errorBanner, { backgroundColor: theme.errorBg }]}>
-            <Ionicons name="alert-circle" size={20} color={theme.errorText} />
-            <Text style={[styles.errorText, { color: theme.errorText }]}>{error}</Text>
-          </View>
-        ) : null}
-
-        {loading ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={theme.primary} />
-            <Text style={[styles.loadingText, { color: theme.subtext }]}>Loading history...</Text>
-          </View>
-        ) : sessions.length === 0 && !error ? (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="calendar-outline" size={56} color={theme.subtext} />
-            <Text style={[styles.emptyText, { color: theme.text }]}>No sessions yet.</Text>
-            <Text style={[styles.emptySubtext, { color: theme.subtext }]}>Start an interview from the Topics tab!</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={sessions}
-            keyExtractor={(item) => item.session_id.toString()}
-            renderItem={renderSessionItem}
-            contentContainerStyle={styles.listContainer}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
-            }
-          />
-        )}
+        <FlatList
+          data={loading ? [] : sessions}
+          keyExtractor={(item) => item.session_id.toString()}
+          renderItem={renderSessionItem}
+          contentContainerStyle={styles.listContainer}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={
+            loading ? (
+              <View style={styles.centerContainer}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.loadingText, { color: theme.subtext }]}>Loading history...</Text>
+              </View>
+            ) : sessions.length === 0 && !error ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="calendar-outline" size={56} color={theme.subtext} />
+                <Text style={[styles.emptyText, { color: theme.text }]}>No sessions yet.</Text>
+                <Text style={[styles.emptySubtext, { color: theme.subtext }]}>Start an interview from the Topics tab!</Text>
+              </View>
+            ) : null
+          }
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
+          }
+        />
       </View>
 
       {/* Transcript Detail Modal */}
@@ -191,6 +197,8 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 18,
+  },
+  headerContainer: {
     paddingTop: 18,
   },
   heading: {
