@@ -42,6 +42,7 @@ class SendMessageRequest(BaseModel):
 class SendMessageResponse(BaseModel):
     reply: str
     next_question: str | None = None
+    score: int | None = None
 
 
 class EndSessionRequest(BaseModel):
@@ -144,13 +145,19 @@ def is_gibberish(text: str) -> bool:
     return False
 
 
-def evaluate_offline_answer(question: str, user_answer: str, topic: str) -> str:
-    """Smart offline evaluator for feedback when Ollama LLM is unavailable."""
+def evaluate_offline_answer(question: str, user_answer: str, topic: str) -> tuple[str, int]:
+    """Smart evaluator returning feedback message and integer score (0-10)."""
     if is_gibberish(user_answer):
-        return "Invalid or unrecognized response. Please enter a clear technical answer or code solution."
+        return (
+            "Invalid or unrecognized response. Please enter a clear technical answer or code solution.",
+            0,
+        )
 
     if is_dont_know_or_invalid(user_answer):
-        return f"No worries! Review the core principles, algorithms, and complexity of {topic} to improve."
+        return (
+            f"No worries! Review the core principles, algorithms, and complexity of {topic} to improve.",
+            2,
+        )
 
     text_words = set(re.findall(r"\b\w+\b", user_answer.lower()))
     keywords = TOPIC_KEYWORDS.get(topic, [])
@@ -158,13 +165,25 @@ def evaluate_offline_answer(question: str, user_answer: str, topic: str) -> str:
     matched_topic_kw = [w for w in keywords if w in text_words]
 
     if len(matched_topic_kw) >= 3:
-        return f"Solid technical answer! You properly referenced key concepts like ({', '.join(matched_topic_kw[:3])})."
+        return (
+            f"Solid technical answer! You properly referenced key concepts like ({', '.join(matched_topic_kw[:3])}).",
+            9,
+        )
     elif len(matched_topic_kw) >= 1:
-        return f"Decent attempt mentioning {', '.join(matched_topic_kw[:2])}. Elaborate more on trade-offs and detailed mechanisms."
+        return (
+            f"Decent attempt mentioning {', '.join(matched_topic_kw[:2])}. Elaborate more on trade-offs and detailed mechanisms.",
+            7,
+        )
     elif len(text_words) >= 10:
-        return "You provided a general answer, but it lacks specific technical terminology for this topic."
+        return (
+            "You provided a general answer, but it lacks specific technical terminology for this topic.",
+            5,
+        )
     else:
-        return "Very brief response. Include key technical definitions and mechanisms for higher credit."
+        return (
+            "Very brief response. Include key technical definitions and mechanisms for higher credit.",
+            3,
+        )
 
 
 async def call_ollama(messages: list[dict]) -> str:
@@ -173,20 +192,17 @@ async def call_ollama(messages: list[dict]) -> str:
         "messages": messages,
         "stream": False,
         "options": {
-            "num_predict": 90,    # Tokens for score + concise correct explanation
-            "temperature": 0.2,   # Fast low-temperature sampling
+            "num_predict": 120,
+            "temperature": 0.3,
             "top_k": 20,
-            "num_ctx": 512,       # Small context for maximum CPU speed
+            "num_ctx": 512,
         },
     }
-    # 1.5-second timeout so offline fallback responds instantly without lagging
-    async with httpx.AsyncClient(timeout=1.5) as client:
+    async with httpx.AsyncClient(timeout=2.5) as client:
         response = await client.post(f"{OLLAMA_URL}/api/chat", json=payload)
         response.raise_for_status()
         data = response.json()
         return data["message"]["content"]
-
-
 
 
 def get_owned_session(session_id: int, user: User, db: Session) -> InterviewSession:
@@ -266,7 +282,7 @@ async def send_message(
             .all()
         )
 
-        # Get asked bot questions (ignore bot evaluation feedback messages)
+        # Get asked bot questions
         asked_questions = [m.content for m in history if m.role == "bot" and m.score is None and not m.content.startswith("Hello") and not m.content.startswith("Let's focus")]
         last_bot_question = asked_questions[-1] if asked_questions else f"What are key concepts of {session.topic}?"
 
@@ -288,41 +304,46 @@ async def send_message(
             bot_message = Message(session_id=session.id, role="bot", content=reply, score=None)
             db.add(bot_message)
             db.commit()
-            return SendMessageResponse(reply=reply, next_question=last_bot_question)
+            return SendMessageResponse(reply=reply, next_question=last_bot_question, score=None)
 
-        # 2. Process evaluation via Ollama LLM (or smart local offline fallback)
-        recent_history = history[-4:]
+        # 2. Check gibberish / invalid / don't know
+        score_val = 0
+        if is_gibberish(raw_content):
+            reply = "Invalid or unrecognized response. Please enter a clear technical answer or code solution."
+            score_val = 0
+        elif is_dont_know_or_invalid(raw_content):
+            reply = f"No worries! Review the core principles and algorithms of {session.topic} to improve."
+            score_val = 2
+        else:
+            # 3. Process evaluation via Ollama LLM or keyword engine
+            recent_history = history[-4:]
+            ollama_messages = [
+                {
+                    "role": "system",
+                    "content": (
+                        f"You are an expert technical interviewer evaluating an answer for topic: {session.topic}.\n"
+                        f"Question asked: '{last_bot_question}'.\n"
+                        f"Provide 2-3 sentences of feedback. Rate the answer from 0 to 10 and include 'Score: X/10' in your response."
+                    )
+                }
+            ]
+            for msg in recent_history:
+                role = "assistant" if msg.role == "bot" else "user"
+                ollama_messages.append({"role": role, "content": msg.content})
 
-        ollama_messages = [
-            {
-                "role": "system",
-                "content": (
-                    f"You are a helpful technical mentor. Give concise feedback on the user's "
-                    f"answer for topic: {session.topic}.\n"
-                    f"Question asked: '{last_bot_question}'.\n"
-                    f"Rules: Do NOT give a score or number rating. Just give 2-3 sentences of constructive feedback. "
-                    f"If the code/answer is correct, say so and mention one strength. "
-                    f"If wrong or incomplete, briefly explain what is wrong and what the correct approach is."
-                )
-            }
-        ]
-        for msg in recent_history:
-            role = "assistant" if msg.role == "bot" else "user"
-            ollama_messages.append({"role": role, "content": msg.content})
+            try:
+                raw_reply = await call_ollama(ollama_messages)
+                match = re.search(r"Score:\s*(\d{1,2})\s*/\s*10", raw_reply, re.IGNORECASE)
+                if match:
+                    score_val = max(0, min(10, int(match.group(1))))
+                    reply = re.sub(r"Score:\s*\d{1,2}\s*/\s*10", "", raw_reply).strip()
+                else:
+                    reply, score_val = evaluate_offline_answer(last_bot_question, raw_content, session.topic)
+            except Exception:
+                reply, score_val = evaluate_offline_answer(last_bot_question, raw_content, session.topic)
 
-        reply = ""
-
-        try:
-            raw_reply = await call_ollama(ollama_messages)
-            # Strip any accidental score lines the model might output
-            reply = re.sub(r"Score:\s*\d{1,2}\s*/\s*10", "", raw_reply).strip()
-            reply = reply if reply else "Keep practicing! Review the problem constraints carefully."
-        except Exception:
-            # Smart local offline fallback evaluation
-            reply = evaluate_offline_answer(last_bot_question, raw_content, session.topic)
-
-        # Save evaluation message to DB (score=None always now)
-        bot_eval = Message(session_id=session.id, role="bot", content=reply, score=None)
+        # Save evaluation message to DB with score
+        bot_eval = Message(session_id=session.id, role="bot", content=reply, score=score_val)
         db.add(bot_eval)
 
         # Save next question message to DB
@@ -331,14 +352,12 @@ async def send_message(
 
         db.commit()
 
-        return SendMessageResponse(reply=reply, next_question=next_q)
+        return SendMessageResponse(reply=reply, next_question=next_q, score=score_val)
     except HTTPException:
         raise
     except Exception as exc:
         fallback_reply = "Keep practicing! Review the problem constraints carefully."
-        return SendMessageResponse(reply=fallback_reply, next_question="What are the main considerations for solving this type of problem?")
-
-
+        return SendMessageResponse(reply=fallback_reply, next_question="What are the main considerations for solving this type of problem?", score=5)
 
 
 @router.post("/end", response_model=EndSessionResponse)
@@ -356,18 +375,15 @@ def end_session(
     )
     
     scores = [m.score for m in bot_messages if m.score is not None]
-    total_questions = len(bot_messages)
-    avg_score = round(sum(scores) / len(scores), 1) if scores else None
+    total_questions = len(scores)
+    avg_score = round(sum(scores) / len(scores), 1) if scores else 0.0
     
-    if avg_score is not None:
-        if avg_score >= 8.0:
-            summary = f"Excellent performance in {session.topic}! You demonstrated strong problem-solving skills and technical depth."
-        elif avg_score >= 5.0:
-            summary = f"Good job in {session.topic}! You answered core questions well with minor opportunities for detail enhancement."
-        else:
-            summary = f"Completed {session.topic} session. Review core concepts and practice step-by-step problem explanations."
+    if avg_score >= 8.0:
+        summary = f"🌟 Excellent performance ({avg_score}/10) in {session.topic}! You demonstrated strong problem-solving skills and technical depth."
+    elif avg_score >= 5.0:
+        summary = f"👍 Good job ({avg_score}/10) in {session.topic}! You answered core questions well with minor opportunities for detail enhancement."
     else:
-        summary = f"Completed {session.topic} interview session."
+        summary = f"📚 Completed {session.topic} session ({avg_score}/10). Review core concepts and practice step-by-step problem explanations."
 
     return EndSessionResponse(
         session_id=session.id,
