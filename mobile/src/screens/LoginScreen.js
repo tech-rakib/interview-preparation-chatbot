@@ -74,6 +74,7 @@ export default function LoginScreen({ navigation }) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <TouchableOpacity
             style={[styles.serverToggle, { backgroundColor: theme.inputBg }]}
             onPress={() => setServerModalVisible(true)}
