@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import Header from '../components/Header';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeContext } from '../context/ThemeContext';
@@ -31,7 +32,7 @@ const COURSES = [
   { id: 'ai_specialist', name: 'AI & Advanced Computing', price: '৳690', rawPrice: 690, desc: 'Unlocks Computer Networks, OOP, and Artificial Intelligence' },
 ];
 
-export default function PricingScreen({ navigation }) {
+export default function PricingScreen({ route, navigation }) {
   const { theme } = useContext(ThemeContext);
   const { user, upgradeUserPlan } = useContext(AuthContext);
   const insets = useSafeAreaInsets();
@@ -63,6 +64,28 @@ export default function PricingScreen({ navigation }) {
     setCardCvv('123');
     setModalVisible(true);
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (route.params?.initialCourseId) {
+        const courseId = route.params.initialCourseId;
+        setActiveCourseId(courseId);
+        
+        // Open payment modal immediately
+        setSuccess(false);
+        setProcessing(false);
+        setPhoneOrAccount('01700000000');
+        setTrxId('TRX' + Math.floor(10000000 + Math.random() * 90000000));
+        setCardNumber('4242 4242 4242 4242');
+        setCardExpiry('12/28');
+        setCardCvv('123');
+        setModalVisible(true);
+
+        // Reset parameters so it doesn't pop up again when user switches back later
+        navigation.setParams({ initialCourseId: undefined });
+      }
+    }, [route.params?.initialCourseId])
+  );
 
   const handleConfirmPayment = async () => {
     setProcessing(true);

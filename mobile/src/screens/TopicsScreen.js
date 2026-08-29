@@ -83,8 +83,26 @@ export default function TopicsScreen({ navigation }) {
     fetchTopics();
   };
 
+const TOPIC_COURSE_MAP = {
+  OS: 'systems_db',
+  DBMS: 'systems_db',
+  CA: 'systems_db',
+  DSA: 'dsa_master',
+  C: 'dsa_master',
+  CPP: 'dsa_master',
+  JAVA: 'dsa_master',
+  CN: 'ai_specialist',
+  OOP: 'ai_specialist',
+  AI: 'ai_specialist',
+  SAD: 'full_cs',
+};
+
   const handleSelectTopic = (topic, locked) => {
-    if (locked) return;
+    if (locked) {
+      const courseId = TOPIC_COURSE_MAP[topic] || 'full_cs';
+      navigation.navigate('Pricing', { initialCourseId: courseId });
+      return;
+    }
     navigation.navigate('Chat', { topic });
   };
 
@@ -97,11 +115,10 @@ export default function TopicsScreen({ navigation }) {
         style={[
           styles.card,
           { backgroundColor: theme.card, borderColor: theme.border },
-          locked && { backgroundColor: theme.inputBg, opacity: 0.7 },
+          locked && { backgroundColor: theme.inputBg, opacity: 0.85 },
         ]}
         onPress={() => handleSelectTopic(topic, locked)}
-        activeOpacity={locked ? 1 : 0.7}
-        disabled={locked}
+        activeOpacity={0.7}
       >
         <View style={styles.cardHeader}>
           <View
