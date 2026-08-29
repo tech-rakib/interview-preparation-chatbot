@@ -116,21 +116,19 @@ export default function AppNavigator() {
 
   if (isLoading) {
     return (
-      <SafeAreaProvider>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
-          <ActivityIndicator size="large" color={theme.primary} />
-        </View>
-      </SafeAreaProvider>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </View>
     );
   }
 
   return (
-    <SafeAreaProvider>
+    <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <NavigationContainer>
         {token ? <AppStackNavigator /> : <AuthStackNavigator />}
       </NavigationContainer>
-    </SafeAreaProvider>
+    </>
   );
 }

@@ -24,21 +24,26 @@ export const AuthProvider = ({ children }) => {
 
       if (storedToken && storedUser) {
         setToken(storedToken);
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-
-        // Verify token with backend
         try {
-          const res = await api.get('/api/auth/me');
-          if (res.data) {
-            setUser(res.data);
-            await AsyncStorage.setItem('user', JSON.stringify(res.data));
-          }
-        } catch (meError) {
-          if (meError.response && meError.response.status === 401) {
-            await logout();
-          }
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        } catch (parseErr) {
+          console.log('User parse error:', parseErr);
         }
+
+        // Verify token in the background without blocking app startup
+        api.get('/api/auth/me', { timeout: 8000 })
+          .then(async (res) => {
+            if (res.data) {
+              setUser(res.data);
+              await AsyncStorage.setItem('user', JSON.stringify(res.data));
+            }
+          })
+          .catch(async (meError) => {
+            if (meError.response && meError.response.status === 401) {
+              await logout();
+            }
+          });
       }
     } catch (e) {
       console.error('Failed to load auth state:', e);
