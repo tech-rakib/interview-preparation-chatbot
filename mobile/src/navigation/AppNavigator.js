@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
-import { View, ActivityIndicator } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View, ActivityIndicator, Platform } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -16,9 +16,6 @@ import ChatScreen from '../screens/ChatScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import PricingScreen from '../screens/PricingScreen';
 import AskAIScreen from '../screens/AskAIScreen';
-
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Platform } from 'react-native';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
