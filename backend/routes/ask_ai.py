@@ -193,33 +193,8 @@ async def _call_gemini_ask(messages: list[dict]) -> str:
 
 async def _call_cloud_free_ask(messages: list[dict]) -> str:
     """Call public cloud AI inference endpoints with automatic model fallbacks."""
-    clean_msgs = []
-    for m in messages:
-        role = m.get("role", "user")
-        if role not in ("system", "user", "assistant"):
-            role = "user"
-        clean_msgs.append({"role": role, "content": m.get("content", "")})
-
-    # Try pollinations with multiple models
-    models = ["openai", "mistral", "qwen", "llama", "deepseek"]
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Accept": "text/plain, application/json",
-        "Content-Type": "application/json"
-    }
-
-    async with httpx.AsyncClient(timeout=12.0, headers=headers) as client:
-        for model in models:
-            try:
-                payload = {"messages": clean_msgs, "model": model, "temperature": 0.7}
-                res = await client.post("https://text.pollinations.ai/", json=payload)
-                if res.status_code == 200 and res.text.strip():
-                    txt = res.text.strip()
-                    if not txt.startswith("{\"error\"") and not txt.startswith("Error:"):
-                        return txt
-            except Exception:
-                continue
-
+    # Pollinations text API is now deprecated/paid, raising exception to fail fast
+    # and avoid 60-second timeouts that make the UI feel slow.
     raise Exception("Free cloud AI inference currently unavailable")
 
 
@@ -400,16 +375,14 @@ def _generate_cs_assistant_reply(messages: list[dict]) -> str:
 
     # 10. General Question fallback with clean, structured guidance
     return (
-        f"### 💡 Insights on: *\"{last_user_msg}\"*\n\n"
-        "Here is a comprehensive breakdown for this topic:\n\n"
-        "1. **Core Concept:**\n"
-        f"   • {last_user_msg.capitalize()} is an important topic in Computer Science and software development.\n"
-        "   • Focus on understanding the foundational definitions, trade-offs, and practical implementations.\n\n"
-        "2. **Technical Considerations:**\n"
-        "   • **Complexity & Performance:** Always analyze time ($O$) and space ($O$) trade-offs in interview settings.\n"
-        "   • **Best Practices:** Maintain clean code, handle edge cases (null values, boundary limits), and apply modular architecture.\n\n"
-        "3. **Next Steps:**\n"
-        "   • Feel free to ask for a specific code example (C, C++, Java, Python), algorithm explanation, or technical interview practice question!"
+        f"### ⚠️ Offline / Missing API Key\n\n"
+        f"I am currently operating in **Offline Fallback Mode** because my Cloud AI connection failed or the `GEMINI_API_KEY` is missing/invalid.\n\n"
+        f"As a result, I cannot dynamically generate an answer for your query: *\"{last_user_msg}\"*.\n\n"
+        "**To fix this:**\n"
+        "1. Open your `.env` file.\n"
+        "2. Add a valid Google Gemini API key: `GEMINI_API_KEY=your_key_here`\n"
+        "3. Restart the server.\n\n"
+        "*(Note: Without a key, I can only answer a few pre-programmed questions about C, C++, Java, OOP, OS, DBMS, etc.)*"
     )
 
 
