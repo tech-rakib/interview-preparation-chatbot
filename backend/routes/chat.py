@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
  
 ALL_TOPICS = ["DSA", "OS", "DBMS", "OOP", "CN", "C", "CPP", "JAVA", "CA", "SAD", "AI"]
 FREE_TOPICS = ["DSA", "OOP", "CN", "C", "CPP", "JAVA", "SAD", "AI"]
@@ -200,7 +200,7 @@ async def call_gemini_eval(prompt: str) -> str:
             "temperature": 0.3,
         }
     }
-    candidate_models = [GEMINI_MODEL, "gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"]
+    candidate_models = [GEMINI_MODEL, "gemini-1.5-flash", "gemini-2.0-flash-lite", "gemini-2.0-flash", "gemini-2.5-flash"]
     async with httpx.AsyncClient(timeout=15.0) as client:
         for model in candidate_models:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
@@ -347,10 +347,13 @@ async def send_message(
             # 3. Process evaluation via Gemini Cloud LLM, Ollama LLM, or smart keyword engine
             recent_history = history[-4:]
             eval_prompt = (
-                f"You are an expert technical interviewer evaluating an answer for topic: {session.topic}.\n"
+                f"You are a strict technical interviewer evaluating an answer for topic: {session.topic}.\n"
                 f"Question asked: '{last_bot_question}'.\n"
                 f"Candidate's answer: '{raw_content}'.\n"
-                f"Provide 2-3 sentences of constructive feedback. Rate the answer from 0 to 10 and include 'Score: X/10' in your response."
+                f"Provide 2-3 sentences of constructive feedback. Be strict. Rate the answer strictly from 0 to 10. "
+                f"If the answer is incorrect, partial, or lacks technical depth, give a low score (0-4). "
+                f"Do not give high scores (7-10) unless the answer is completely accurate and detailed. "
+                f"Include 'Score: X/10' in your response."
             )
             ollama_messages = [
                 {

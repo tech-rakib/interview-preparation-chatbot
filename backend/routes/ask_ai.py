@@ -17,7 +17,7 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434").rstrip("/")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
 OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "90"))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 ASK_AI_SYSTEM_PROMPT = (
@@ -158,11 +158,11 @@ async def _call_gemini_ask(messages: list[dict]) -> str:
 
     candidate_models = [
         GEMINI_MODEL,
-        "gemini-2.0-flash",
         "gemini-1.5-flash",
-        "gemini-2.5-flash",
-        "gemini-1.5-pro",
         "gemini-2.0-flash-lite",
+        "gemini-2.0-flash",
+        "gemini-1.5-pro",
+        "gemini-2.5-flash",
         "gemini-flash-latest"
     ]
     unique_models = list(dict.fromkeys([m for m in candidate_models if m]))
