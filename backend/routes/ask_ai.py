@@ -198,7 +198,7 @@ async def _call_cloud_free_ask(messages: list[dict]) -> str:
     raise Exception("Free cloud AI inference currently unavailable")
 
 
-def _generate_cs_assistant_reply(messages: list[dict]) -> str:
+def _generate_cs_assistant_reply(messages: list[dict], error_msg: str = None) -> str:
     """Intelligent built-in CS and technical interview reasoning engine.
     Ensures the user ALWAYS receives a helpful, high-quality, formatted answer
     even if all external cloud networks are unreachable or rate-limited.
@@ -210,6 +210,8 @@ def _generate_cs_assistant_reply(messages: list[dict]) -> str:
             break
 
     q = last_user_msg.lower()
+
+
 
     # 1. Greetings
     if re.search(r"^(hi|hello|hey|hlo|hy|salam|assalamu|greetings|hola)\b", q):
@@ -374,25 +376,27 @@ def _generate_cs_assistant_reply(messages: list[dict]) -> str:
         )
 
     # 10. General Question fallback with clean, structured guidance
+    err_text = f"\n\n**Error Details:** `{error_msg}`" if error_msg else ""
     return (
-        f"### ⚠️ Offline / Missing API Key\n\n"
-        f"I am currently operating in **Offline Fallback Mode** because my Cloud AI connection failed or the `GEMINI_API_KEY` is missing/invalid.\n\n"
+        f"### ⚠️ Offline / Connection Failed\n\n"
+        f"I am currently operating in **Offline Fallback Mode** because my Cloud AI connection failed.{err_text}\n\n"
         f"As a result, I cannot dynamically generate an answer for your query: *\"{last_user_msg}\"*.\n\n"
         "**To fix this:**\n"
-        "1. Open your `.env` file.\n"
-        "2. Add a valid Google Gemini API key: `GEMINI_API_KEY=your_key_here`\n"
-        "3. Restart the server.\n\n"
+        "1. Check if your `GEMINI_API_KEY` is correct in Render Environment Variables.\n"
+        "2. Make sure the API key has the correct format and has not expired.\n\n"
         "*(Note: Without a key, I can only answer a few pre-programmed questions about C, C++, Java, OOP, OS, DBMS, etc.)*"
     )
 
 
 async def _get_ai_reply(messages: list[dict]) -> tuple[str, str]:
-    """Try Gemini first (if key configured), then Ollama (local), then Free Cloud AI fallback, then Built-in CS Knowledge Engine."""
+    """Try Gemini first (if key configured), then Ollama (local), then Built-in CS Knowledge Engine."""
+    last_error_msg = None
     # 1. Try Google Gemini API if key is set
     if GEMINI_API_KEY:
         try:
             return await _call_gemini_ask(messages), "gemini"
         except Exception as e:
+            last_error_msg = str(e)
             print(f"[Ask AI] Gemini call failed: {e}")
 
     # 2. Try Ollama (local LLM when PC is running)
@@ -401,15 +405,8 @@ async def _get_ai_reply(messages: list[dict]) -> tuple[str, str]:
     except Exception as e:
         pass
 
-    # 3. Free Cloud AI Fallback
-    try:
-        return await _call_cloud_free_ask(messages), "cloud-ai"
-    except Exception as e:
-        pass
-
-    # 4. Intelligent built-in CS knowledge & reasoning engine
-    # Guarantees user ALWAYS gets an accurate, formatted, helpful answer even when offline/laptop is off!
-    return _generate_cs_assistant_reply(messages), "cloud-ai"
+    # 3. Intelligent built-in CS knowledge & reasoning engine
+    return _generate_cs_assistant_reply(messages, last_error_msg), "cloud-ai"
 
 
 # ── Routes ─────────────────────────────────────────────────────
