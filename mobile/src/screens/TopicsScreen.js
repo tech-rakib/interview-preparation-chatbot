@@ -9,6 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../api/client';
 import Header from '../components/Header';
 import { Ionicons } from '@expo/vector-icons';
@@ -46,6 +47,7 @@ const TOPIC_ICONS = {
 export default function TopicsScreen({ navigation }) {
   const { theme } = useContext(ThemeContext);
   const { logout } = useContext(AuthContext);
+  const insets = useSafeAreaInsets();
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -169,7 +171,7 @@ export default function TopicsScreen({ navigation }) {
           data={loading ? [] : topics}
           keyExtractor={(item) => item.topic}
           renderItem={renderTopicItem}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[styles.listContainer, { paddingBottom: 28 + Math.max(insets.bottom, 12) }]}
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={
             loading ? (

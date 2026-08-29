@@ -16,6 +16,8 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
  
 ALL_TOPICS = ["DSA", "OS", "DBMS", "OOP", "CN", "C", "CPP", "JAVA", "CA", "SAD", "AI"]
 FREE_TOPICS = ["DSA", "OOP", "CN", "C", "CPP", "JAVA", "SAD", "AI"]
@@ -186,6 +188,33 @@ def evaluate_offline_answer(question: str, user_answer: str, topic: str) -> tupl
         )
 
 
+async def call_gemini_eval(prompt: str) -> str:
+    """Evaluate interview answer using Gemini API when available."""
+    if not GEMINI_API_KEY:
+        raise Exception("No Gemini API key")
+    
+    payload = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "maxOutputTokens": 300,
+            "temperature": 0.3,
+        }
+    }
+    candidate_models = [GEMINI_MODEL, "gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"]
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        for model in candidate_models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+            try:
+                res = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
+                if res.status_code == 200:
+                    data = res.json()
+                    parts = data.get("candidates", [])[0].get("content", {}).get("parts", [])
+                    return parts[0].get("text", "").strip()
+            except Exception:
+                continue
+    raise Exception("Gemini eval failed")
+
+
 async def call_ollama(messages: list[dict]) -> str:
     payload = {
         "model": OLLAMA_MODEL,
@@ -315,31 +344,52 @@ async def send_message(
             reply = f"No worries! Review the core principles and algorithms of {session.topic} to improve."
             score_val = 0
         else:
-            # 3. Process evaluation via Ollama LLM or keyword engine
+            # 3. Process evaluation via Gemini Cloud LLM, Ollama LLM, or smart keyword engine
             recent_history = history[-4:]
+            eval_prompt = (
+                f"You are an expert technical interviewer evaluating an answer for topic: {session.topic}.\n"
+                f"Question asked: '{last_bot_question}'.\n"
+                f"Candidate's answer: '{raw_content}'.\n"
+                f"Provide 2-3 sentences of constructive feedback. Rate the answer from 0 to 10 and include 'Score: X/10' in your response."
+            )
             ollama_messages = [
                 {
                     "role": "system",
-                    "content": (
-                        f"You are an expert technical interviewer evaluating an answer for topic: {session.topic}.\n"
-                        f"Question asked: '{last_bot_question}'.\n"
-                        f"Provide 2-3 sentences of feedback. Rate the answer from 0 to 10 and include 'Score: X/10' in your response."
-                    )
+                    "content": eval_prompt
                 }
             ]
             for msg in recent_history:
                 role = "assistant" if msg.role == "bot" else "user"
                 ollama_messages.append({"role": role, "content": msg.content})
 
-            try:
-                raw_reply = await call_ollama(ollama_messages)
-                match = re.search(r"Score:\s*(\d{1,2})\s*/\s*10", raw_reply, re.IGNORECASE)
-                if match:
-                    score_val = max(0, min(10, int(match.group(1))))
-                    reply = re.sub(r"Score:\s*\d{1,2}\s*/\s*10", "", raw_reply).strip()
-                else:
-                    reply, score_val = evaluate_offline_answer(last_bot_question, raw_content, session.topic)
-            except Exception:
+            evaluated = False
+
+            # 3a. Try Gemini Cloud AI
+            if GEMINI_API_KEY:
+                try:
+                    raw_reply = await call_gemini_eval(eval_prompt)
+                    match = re.search(r"Score:\s*(\d{1,2})\s*/\s*10", raw_reply, re.IGNORECASE)
+                    if match:
+                        score_val = max(0, min(10, int(match.group(1))))
+                        reply = re.sub(r"Score:\s*\d{1,2}\s*/\s*10", "", raw_reply).strip()
+                        evaluated = True
+                except Exception:
+                    pass
+
+            # 3b. Try Ollama if Gemini not evaluated
+            if not evaluated:
+                try:
+                    raw_reply = await call_ollama(ollama_messages)
+                    match = re.search(r"Score:\s*(\d{1,2})\s*/\s*10", raw_reply, re.IGNORECASE)
+                    if match:
+                        score_val = max(0, min(10, int(match.group(1))))
+                        reply = re.sub(r"Score:\s*\d{1,2}\s*/\s*10", "", raw_reply).strip()
+                        evaluated = True
+                except Exception:
+                    pass
+
+            # 3c. Fallback to smart offline keyword engine
+            if not evaluated:
                 reply, score_val = evaluate_offline_answer(last_bot_question, raw_content, session.topic)
 
         # Save evaluation message to DB with score

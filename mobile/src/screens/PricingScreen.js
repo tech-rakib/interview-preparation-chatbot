@@ -9,8 +9,7 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
-  SafeAreaView,
-} from 'react-native';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeContext } from '../context/ThemeContext';
@@ -27,6 +26,7 @@ const PAYMENT_METHODS = [
 export default function PricingScreen({ navigation }) {
   const { theme } = useContext(ThemeContext);
   const { user, upgradeUserPlan } = useContext(AuthContext);
+  const insets = useSafeAreaInsets();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState('bkash');
@@ -73,7 +73,7 @@ export default function PricingScreen({ navigation }) {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Pricing Plans" />
 
-      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContainer, { paddingBottom: 36 + Math.max(insets.bottom, 12) }]} showsVerticalScrollIndicator={false}>
         {isPro && (
           <View style={[styles.activeProBanner, { backgroundColor: '#ECFDF5', borderColor: '#10B981' }]}>
             <Ionicons name="checkmark-circle" size={28} color="#10B981" />

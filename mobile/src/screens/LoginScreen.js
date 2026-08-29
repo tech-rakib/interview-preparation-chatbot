@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-} from 'react-native';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +27,7 @@ export default function LoginScreen({ navigation }) {
 
   const { login } = useContext(AuthContext);
   const { theme, isDark, toggleTheme } = useContext(ThemeContext);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     updateActiveServer();
@@ -69,12 +70,13 @@ export default function LoginScreen({ navigation }) {
   const isCloudServer = activeServerUrl === CLOUD_API_URL;
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: theme.background }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <TouchableOpacity
             style={[styles.serverToggle, { backgroundColor: theme.inputBg }]}
             onPress={() => setServerModalVisible(true)}
@@ -171,7 +173,8 @@ export default function LoginScreen({ navigation }) {
         onClose={() => setServerModalVisible(false)}
         onServerChanged={updateActiveServer}
       />
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

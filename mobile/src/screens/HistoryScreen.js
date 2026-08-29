@@ -1,4 +1,3 @@
-import React, { useEffect, useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -10,6 +9,7 @@ import {
   ScrollView,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import api from '../api/client';
 import Header from '../components/Header';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +17,7 @@ import { ThemeContext } from '../context/ThemeContext';
 
 export default function HistoryScreen() {
   const { theme } = useContext(ThemeContext);
+  const insets = useSafeAreaInsets();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -113,7 +114,7 @@ export default function HistoryScreen() {
           data={loading ? [] : sessions}
           keyExtractor={(item) => item.session_id.toString()}
           renderItem={renderSessionItem}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[styles.listContainer, { paddingBottom: 28 + Math.max(insets.bottom, 12) }]}
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={
             loading ? (
@@ -143,7 +144,7 @@ export default function HistoryScreen() {
         onRequestClose={() => setSelectedSession(null)}
       >
         <View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay }]}>
-          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+          <SafeAreaView style={[styles.modalContent, { backgroundColor: theme.card }]} edges={['bottom']}>
             {modalLoading ? (
               <ActivityIndicator size="large" color={theme.primary} style={{ margin: 30 }} />
             ) : selectedSession ? (
@@ -183,7 +184,7 @@ export default function HistoryScreen() {
                 </ScrollView>
               </>
             ) : null}
-          </View>
+          </SafeAreaView>
         </View>
       </Modal>
     </View>

@@ -491,7 +491,7 @@ export default function AskAIScreen() {
           },
         ]}
       >
-        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
           <View style={styles.drawerHeader}>
             <Text style={[styles.drawerTitle, { color: theme.text }]}>Chat History</Text>
             <TouchableOpacity onPress={closeDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>

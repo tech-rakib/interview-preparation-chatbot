@@ -219,7 +219,9 @@ export default function ChatScreen({ route, navigation }) {
         </TouchableOpacity>
 
         <View style={styles.headerTitleContainer}>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>{topic} Interview</Text>
+          <Text style={[styles.headerTitle, { color: theme.text }]} numberOfLines={1}>
+            {topic} Interview
+          </Text>
           <Text style={[styles.headerSubtitle, { color: theme.subtext }]}>AI Mock Session</Text>
         </View>
 

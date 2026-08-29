@@ -17,41 +17,57 @@ import HistoryScreen from '../screens/HistoryScreen';
 import PricingScreen from '../screens/PricingScreen';
 import AskAIScreen from '../screens/AskAIScreen';
 
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Platform } from 'react-native';
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function MainTabNavigator() {
   const { theme } = useContext(ThemeContext);
+  const insets = useSafeAreaInsets();
+
+  // On Android with 3-button nav or gestures, insets.bottom ensures icons/text are above system buttons.
+  const bottomInset = Platform.OS === 'android' ? Math.max(insets.bottom, 12) : insets.bottom || 8;
+  const tabHeight = 60 + bottomInset;
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.subtext,
         tabBarStyle: {
           backgroundColor: theme.card,
           borderTopWidth: 1,
           borderTopColor: theme.border,
-          paddingBottom: 8,
+          height: tabHeight,
+          paddingBottom: bottomInset,
           paddingTop: 8,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 6,
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: '600',
+          fontWeight: '700',
+          marginBottom: Platform.OS === 'android' ? 4 : 2,
         },
-        tabBarIcon: ({ color, size }) => {
+        tabBarIcon: ({ color, size, focused }) => {
           let iconName;
           if (route.name === 'TopicsMain') {
-            iconName = 'grid-outline';
+            iconName = focused ? 'grid' : 'grid-outline';
           } else if (route.name === 'AskAIMain') {
-            iconName = 'chatbubble-ellipses-outline';
+            iconName = focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline';
           } else if (route.name === 'HistoryMain') {
-            iconName = 'time-outline';
+            iconName = focused ? 'time' : 'time-outline';
           } else if (route.name === 'PricingMain') {
-            iconName = 'card-outline';
+            iconName = focused ? 'card' : 'card-outline';
           }
-          return <Ionicons name={iconName} size={24} color={color} />;
+          return <Ionicons name={iconName} size={22} color={color} />;
         },
       })}
     >

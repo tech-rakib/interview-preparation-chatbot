@@ -113,94 +113,96 @@ export default function ServerModal({ visible, onClose, onServerChanged }) {
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={[styles.container, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <View style={styles.header}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Ionicons name="server-outline" size={24} color={theme.primary} />
-              <Text style={[styles.title, { color: theme.text }]}>Server Settings</Text>
-            </View>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="close" size={24} color={theme.subtext} />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={[styles.subtitle, { color: theme.subtext }]}>
-            Cloud Server = Topics + Ask AI Chat (Gemini / Cloud AI). Local PC = Ollama LLM on your computer.
-          </Text>
-
-          <TouchableOpacity
-            style={[
-              styles.optionCard,
-              { backgroundColor: isCloud ? theme.primaryLight : theme.inputBg, borderColor: isCloud ? theme.primary : theme.border },
-            ]}
-            onPress={handleSelectCloud}
-            activeOpacity={0.8}
-          >
-            <View style={styles.optionHeader}>
-              <Ionicons name="cloud-done-outline" size={24} color={theme.primary} />
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={[styles.optionTitle, { color: theme.text }]}>🌐 Cloud Server (Render)</Text>
-                <Text style={[styles.optionUrl, { color: theme.subtext }]}>{CLOUD_API_URL}</Text>
-                <Text style={[styles.optionBadge, { color: '#059669' }]}>✓ Topics + Ask AI Chat Active</Text>
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <View style={styles.header}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Ionicons name="server-outline" size={24} color={theme.primary} />
+                <Text style={[styles.title, { color: theme.text }]}>Server Settings</Text>
               </View>
-              {isCloud && <Ionicons name="checkmark-circle" size={24} color={theme.primary} />}
+              <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name="close" size={24} color={theme.subtext} />
+              </TouchableOpacity>
             </View>
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.optionCard,
-              { backgroundColor: isLocal ? theme.primaryLight : theme.inputBg, borderColor: isLocal ? theme.primary : theme.border },
-            ]}
-            onPress={handleSelectLocal}
-            activeOpacity={0.8}
-          >
-            <View style={styles.optionHeader}>
-              <Ionicons name="laptop-outline" size={24} color={theme.primary} />
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={[styles.optionTitle, { color: theme.text }]}>💻 Local PC (Ollama)</Text>
-                <Text style={[styles.optionUrl, { color: theme.subtext }]}>http://YOUR_PC_IP:8000</Text>
-                <Text style={[styles.optionBadge, { color: theme.subtext }]}>Best for Ask AI · same Wi-Fi required</Text>
-              </View>
-              {isLocal && (
-                <Ionicons name="checkmark-circle" size={24} color={theme.primary} />
-              )}
-            </View>
-          </TouchableOpacity>
+            <Text style={[styles.subtitle, { color: theme.subtext }]}>
+              Cloud Server = Topics + Ask AI Chat (Gemini / Cloud AI). Local PC = Ollama LLM on your computer.
+            </Text>
 
-          <View style={styles.customSection}>
-            <Text style={[styles.label, { color: theme.text }]}>Custom Server URL:</Text>
-            <View style={[styles.inputWrapper, { backgroundColor: theme.inputBg, borderColor: theme.border }]}>
-              <TextInput
-                style={[styles.input, { color: theme.text }]}
-                value={customInput}
-                onChangeText={setCustomInput}
-                placeholder="http://192.168.1.5:8000"
-                placeholderTextColor={theme.subtext}
-                autoCapitalize="none"
-              />
-            </View>
-          </View>
-
-          <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={[styles.testButton, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
-              onPress={handleTestConnection}
-              disabled={testing}
+              style={[
+                styles.optionCard,
+                { backgroundColor: isCloud ? theme.primaryLight : theme.inputBg, borderColor: isCloud ? theme.primary : theme.border },
+              ]}
+              onPress={handleSelectCloud}
+              activeOpacity={0.8}
             >
-              {testing ? (
-                <ActivityIndicator size="small" color={theme.primary} />
-              ) : (
-                <Text style={[styles.testButtonText, { color: theme.text }]}>Test Connection</Text>
-              )}
+              <View style={styles.optionHeader}>
+                <Ionicons name="cloud-done-outline" size={24} color={theme.primary} />
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={[styles.optionTitle, { color: theme.text }]}>🌐 Cloud Server (Render)</Text>
+                  <Text style={[styles.optionUrl, { color: theme.subtext }]}>{CLOUD_API_URL}</Text>
+                  <Text style={[styles.optionBadge, { color: '#059669' }]}>✓ Topics + Ask AI Chat Active</Text>
+                </View>
+                {isCloud && <Ionicons name="checkmark-circle" size={24} color={theme.primary} />}
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.saveButton, { backgroundColor: theme.primary }]}
-              onPress={handleSaveCustom}
+              style={[
+                styles.optionCard,
+                { backgroundColor: isLocal ? theme.primaryLight : theme.inputBg, borderColor: isLocal ? theme.primary : theme.border },
+              ]}
+              onPress={handleSelectLocal}
+              activeOpacity={0.8}
             >
-              <Text style={styles.saveButtonText}>Save URL</Text>
+              <View style={styles.optionHeader}>
+                <Ionicons name="laptop-outline" size={24} color={theme.primary} />
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={[styles.optionTitle, { color: theme.text }]}>💻 Local PC (Ollama)</Text>
+                  <Text style={[styles.optionUrl, { color: theme.subtext }]}>http://YOUR_PC_IP:8000</Text>
+                  <Text style={[styles.optionBadge, { color: theme.subtext }]}>Best for Ask AI · same Wi-Fi required</Text>
+                </View>
+                {isLocal && (
+                  <Ionicons name="checkmark-circle" size={24} color={theme.primary} />
+                )}
+              </View>
             </TouchableOpacity>
-          </View>
+
+            <View style={styles.customSection}>
+              <Text style={[styles.label, { color: theme.text }]}>Custom Server URL:</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: theme.inputBg, borderColor: theme.border }]}>
+                <TextInput
+                  style={[styles.input, { color: theme.text }]}
+                  value={customInput}
+                  onChangeText={setCustomInput}
+                  placeholder="http://192.168.1.5:8000"
+                  placeholderTextColor={theme.subtext}
+                  autoCapitalize="none"
+                />
+              </View>
+            </View>
+
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={[styles.testButton, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
+                onPress={handleTestConnection}
+                disabled={testing}
+              >
+                {testing ? (
+                  <ActivityIndicator size="small" color={theme.primary} />
+                ) : (
+                  <Text style={[styles.testButtonText, { color: theme.text }]}>Test Connection</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.saveButton, { backgroundColor: theme.primary }]}
+                onPress={handleSaveCustom}
+              >
+                <Text style={styles.saveButtonText}>Save URL</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -216,7 +218,8 @@ const styles = StyleSheet.create({
   },
   container: {
     borderRadius: 24,
-    padding: 24,
+    padding: 20,
+    maxHeight: '88%',
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
