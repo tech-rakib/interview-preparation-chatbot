@@ -26,10 +26,10 @@ const PAYMENT_METHODS = [
 ];
 
 const COURSES = [
-  { id: 'full_cs', name: 'Full Stack Computer Science Prep', price: '৳990', rawPrice: 990, desc: 'Unlocks all 11 topics including Core Engineering & AI' },
-  { id: 'dsa_master', name: 'DSA & Coding Masterclass', price: '৳590', rawPrice: 590, desc: 'Unlocks DSA, C, C++, and Java programming prep' },
-  { id: 'systems_db', name: 'Systems & Database Masterclass', price: '৳490', rawPrice: 490, desc: 'Unlocks OS, DBMS, SAD and Computer Architecture' },
-  { id: 'ai_specialist', name: 'AI & Advanced Computing', price: '৳690', rawPrice: 690, desc: 'Unlocks Computer Networks, OOP, and Artificial Intelligence' },
+  { id: 'full_cs', name: 'Full Access (All Topics)', price: '৳990', rawPrice: 990, desc: 'Unlocks all 11 topics including Core Engineering & AI' },
+  { id: 'os_course', name: 'Operating Systems (Pro Only)', price: '৳290', rawPrice: 290, desc: 'Unlocks OS topic with CPU Scheduling & Memory mock exams' },
+  { id: 'dbms_course', name: 'Database Management Systems (Pro Only)', price: '৳290', rawPrice: 290, desc: 'Unlocks DBMS topic focusing on SQL, Transactions & Indexing' },
+  { id: 'ca_course', name: 'Computer Architecture (Pro Only)', price: '৳290', rawPrice: 290, desc: 'Unlocks Computer Architecture topic covering Pipelining & Registers' },
 ];
 
 export default function PricingScreen({ route, navigation }) {
@@ -317,7 +317,7 @@ export default function PricingScreen({ route, navigation }) {
                   style={[styles.doneButton, { backgroundColor: theme.primary }]}
                   onPress={() => {
                     setModalVisible(false);
-                    navigation.navigate('Topics');
+                    navigation.navigate('TopicsMain');
                   }}
                 >
                   <Text style={styles.doneButtonText}>Start Practicing Topics</Text>

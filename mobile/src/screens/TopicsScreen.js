@@ -84,23 +84,23 @@ export default function TopicsScreen({ navigation }) {
   };
 
 const TOPIC_COURSE_MAP = {
-  OS: 'systems_db',
-  DBMS: 'systems_db',
-  CA: 'systems_db',
-  DSA: 'dsa_master',
-  C: 'dsa_master',
-  CPP: 'dsa_master',
-  JAVA: 'dsa_master',
-  CN: 'ai_specialist',
-  OOP: 'ai_specialist',
-  AI: 'ai_specialist',
+  OS: 'os_course',
+  DBMS: 'dbms_course',
+  CA: 'ca_course',
+  DSA: 'full_cs',
+  C: 'full_cs',
+  CPP: 'full_cs',
+  JAVA: 'full_cs',
+  CN: 'full_cs',
+  OOP: 'full_cs',
+  AI: 'full_cs',
   SAD: 'full_cs',
 };
 
   const handleSelectTopic = (topic, locked) => {
     if (locked) {
       const courseId = TOPIC_COURSE_MAP[topic] || 'full_cs';
-      navigation.navigate('Pricing', { initialCourseId: courseId });
+      navigation.navigate('PricingMain', { initialCourseId: courseId });
       return;
     }
     navigation.navigate('Chat', { topic });
