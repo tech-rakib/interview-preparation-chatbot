@@ -189,10 +189,10 @@ def evaluate_offline_answer(question: str, user_answer: str, topic: str) -> tupl
 
 
 async def call_gemini_eval(prompt: str) -> str:
-    """Evaluate interview answer using Gemini API when available."""
+    """Evaluate interview answer using Gemini API with automatic model fallback."""
     if not GEMINI_API_KEY:
         raise Exception("No Gemini API key")
-    
+
     payload = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {
@@ -200,15 +200,45 @@ async def call_gemini_eval(prompt: str) -> str:
             "temperature": 0.3,
         }
     }
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+
+    # Fallback model list: configured model first, then known working models
+    FALLBACK_MODELS = [
+        GEMINI_MODEL,
+        "gemini-3.6-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-pro",
+        "gemini-1.5-flash-latest",
+    ]
+    seen = set()
+    model_candidates = []
+    for m in FALLBACK_MODELS:
+        if m not in seen:
+            seen.add(m)
+            model_candidates.append(m)
+
+    last_error = "Unknown error"
     async with httpx.AsyncClient(timeout=15.0) as client:
-        res = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
-        if res.status_code == 200:
-            data = res.json()
-            parts = data.get("candidates", [])[0].get("content", {}).get("parts", [])
-            return parts[0].get("text", "").strip()
-        else:
-            raise Exception(f"HTTP {res.status_code}: {res.text}")
+        for model in model_candidates:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+            try:
+                res = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
+                if res.status_code == 200:
+                    data = res.json()
+                    parts = data.get("candidates", [])[0].get("content", {}).get("parts", [])
+                    return parts[0].get("text", "").strip()
+                elif res.status_code == 404:
+                    last_error = f"Model {model} not found (404), trying next..."
+                    print(f"[Chat] Gemini eval {last_error}")
+                    continue
+                else:
+                    last_error = f"HTTP {res.status_code}: {res.text}"
+                    break
+            except Exception as e:
+                last_error = str(e)
+                continue
+
+    raise Exception(last_error)
+
 
 
 async def call_ollama(messages: list[dict]) -> str:

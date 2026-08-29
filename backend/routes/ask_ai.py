@@ -113,7 +113,7 @@ async def _call_ollama_ask(messages: list[dict]) -> str:
 
 
 async def _call_gemini_ask(messages: list[dict]) -> str:
-    """Call Google Gemini API with fallback across standard models."""
+    """Call Google Gemini API with automatic model fallback."""
     if not GEMINI_API_KEY:
         raise Exception("No Gemini API key configured")
 
@@ -156,24 +156,54 @@ async def _call_gemini_ask(messages: list[dict]) -> str:
             "parts": [{"text": system_text}]
         }
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+    # Build fallback model list: configured model first, then known working models
+    FALLBACK_MODELS = [
+        GEMINI_MODEL,
+        "gemini-3.6-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-pro",
+        "gemini-1.5-flash-latest",
+    ]
+    # Remove duplicates while preserving order
+    seen = set()
+    model_candidates = []
+    for m in FALLBACK_MODELS:
+        if m not in seen:
+            seen.add(m)
+            model_candidates.append(m)
+
+    last_error = "Unknown error"
     async with httpx.AsyncClient(timeout=25.0) as client:
-        response = await client.post(
-            url,
-            json=payload,
-            headers={"Content-Type": "application/json"}
-        )
-        if response.status_code == 200:
-            data = response.json()
-            candidates = data.get("candidates", [])
-            if candidates:
-                parts = candidates[0].get("content", {}).get("parts", [])
-                text_parts = [p.get("text", "") for p in parts if "text" in p]
-                if text_parts:
-                    return "\n".join(text_parts).strip()
-            raise Exception("Gemini returned empty response")
-        else:
-            raise Exception(f"HTTP {response.status_code}: {response.text}")
+        for model in model_candidates:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+            try:
+                response = await client.post(
+                    url,
+                    json=payload,
+                    headers={"Content-Type": "application/json"}
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        text_parts = [p.get("text", "") for p in parts if "text" in p]
+                        if text_parts:
+                            print(f"[Ask AI] Gemini success with model: {model}")
+                            return "\n".join(text_parts).strip()
+                    last_error = "Gemini returned empty response"
+                elif response.status_code == 404:
+                    last_error = f"Model {model} not found (404), trying next..."
+                    print(f"[Ask AI] {last_error}")
+                    continue
+                else:
+                    last_error = f"HTTP {response.status_code}: {response.text}"
+                    break
+            except Exception as e:
+                last_error = str(e)
+                continue
+
+    raise Exception(last_error)
 
 
 async def _call_cloud_free_ask(messages: list[dict]) -> str:
