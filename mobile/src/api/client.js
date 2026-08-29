@@ -49,10 +49,8 @@ export const getActiveBaseURL = async () => {
     // fallback
   }
 
-  // During Expo development, default to local backend where Ollama runs.
-  if (typeof __DEV__ !== 'undefined' && __DEV__) {
-    return getLocalDevURL();
-  }
+  // In development and production, default to the cloud backend.
+  // (Removed local dev override so Expo Go connects directly to Render)
 
   return CLOUD_API_URL;
 };
