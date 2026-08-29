@@ -22,5 +22,7 @@ mobile/dist/
 .DS_Store
 mobile/dist-test/
 .idea/
+*.db
+interview_prep.db
 
 
