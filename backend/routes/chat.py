@@ -200,23 +200,15 @@ async def call_gemini_eval(prompt: str) -> str:
             "temperature": 0.3,
         }
     }
-    candidate_models = [GEMINI_MODEL, "gemini-1.5-flash", "gemini-2.0-flash-lite", "gemini-2.0-flash", "gemini-2.5-flash"]
-    last_error = None
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
     async with httpx.AsyncClient(timeout=15.0) as client:
-        for model in candidate_models:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
-            try:
-                res = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
-                if res.status_code == 200:
-                    data = res.json()
-                    parts = data.get("candidates", [])[0].get("content", {}).get("parts", [])
-                    return parts[0].get("text", "").strip()
-                else:
-                    last_error = Exception(f"HTTP {res.status_code}: {res.text}")
-            except Exception as e:
-                last_error = e
-                continue
-    raise last_error or Exception("Gemini eval failed")
+        res = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
+        if res.status_code == 200:
+            data = res.json()
+            parts = data.get("candidates", [])[0].get("content", {}).get("parts", [])
+            return parts[0].get("text", "").strip()
+        else:
+            raise Exception(f"HTTP {res.status_code}: {res.text}")
 
 
 async def call_ollama(messages: list[dict]) -> str:

@@ -156,41 +156,24 @@ async def _call_gemini_ask(messages: list[dict]) -> str:
             "parts": [{"text": system_text}]
         }
 
-    candidate_models = [
-        GEMINI_MODEL,
-        "gemini-1.5-flash",
-        "gemini-2.0-flash-lite",
-        "gemini-2.0-flash",
-        "gemini-1.5-pro",
-        "gemini-2.5-flash",
-        "gemini-flash-latest"
-    ]
-    unique_models = list(dict.fromkeys([m for m in candidate_models if m]))
-
-    last_error = None
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
     async with httpx.AsyncClient(timeout=25.0) as client:
-        for model in unique_models:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
-            try:
-                response = await client.post(
-                    url,
-                    json=payload,
-                    headers={"Content-Type": "application/json"}
-                )
-                if response.status_code == 200:
-                    data = response.json()
-                    candidates = data.get("candidates", [])
-                    if candidates:
-                        parts = candidates[0].get("content", {}).get("parts", [])
-                        text_parts = [p.get("text", "") for p in parts if "text" in p]
-                        if text_parts:
-                            return "\n".join(text_parts).strip()
-                else:
-                    last_error = Exception(f"HTTP {response.status_code}: {response.text}")
-            except Exception as e:
-                last_error = e
-
-    raise last_error or Exception("Gemini API request failed across candidate models")
+        response = await client.post(
+            url,
+            json=payload,
+            headers={"Content-Type": "application/json"}
+        )
+        if response.status_code == 200:
+            data = response.json()
+            candidates = data.get("candidates", [])
+            if candidates:
+                parts = candidates[0].get("content", {}).get("parts", [])
+                text_parts = [p.get("text", "") for p in parts if "text" in p]
+                if text_parts:
+                    return "\n".join(text_parts).strip()
+            raise Exception("Gemini returned empty response")
+        else:
+            raise Exception(f"HTTP {response.status_code}: {response.text}")
 
 
 async def _call_cloud_free_ask(messages: list[dict]) -> str:
