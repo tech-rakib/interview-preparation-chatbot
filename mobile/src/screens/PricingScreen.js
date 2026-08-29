@@ -24,10 +24,20 @@ const PAYMENT_METHODS = [
   { id: 'card', name: 'Card (Visa/MC)', icon: 'card-outline', color: '#10B981', bg: '#ECFDF5' },
 ];
 
+const COURSES = [
+  { id: 'full_cs', name: 'Full Stack Computer Science Prep', price: '৳990', rawPrice: 990, desc: 'Unlocks all 11 topics including Core Engineering & AI' },
+  { id: 'dsa_master', name: 'DSA & Coding Masterclass', price: '৳590', rawPrice: 590, desc: 'Unlocks DSA, C, C++, and Java programming prep' },
+  { id: 'systems_db', name: 'Systems & Database Masterclass', price: '৳490', rawPrice: 490, desc: 'Unlocks OS, DBMS, SAD and Computer Architecture' },
+  { id: 'ai_specialist', name: 'AI & Advanced Computing', price: '৳690', rawPrice: 690, desc: 'Unlocks Computer Networks, OOP, and Artificial Intelligence' },
+];
+
 export default function PricingScreen({ navigation }) {
   const { theme } = useContext(ThemeContext);
   const { user, upgradeUserPlan } = useContext(AuthContext);
   const insets = useSafeAreaInsets();
+
+  const [activeCourseId, setActiveCourseId] = useState('full_cs');
+  const activeCourse = COURSES.find((c) => c.id === activeCourseId) || COURSES[0];
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState('bkash');
@@ -124,23 +134,82 @@ export default function PricingScreen({ navigation }) {
               </Text>
             </View>
           </View>
-
         </View>
 
-        {/* PRO TIER CARD */}
+        {/* STEP 1: COURSE SELECTION */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>1. Select Your Premium Course</Text>
+          <Text style={[styles.sectionSubtitle, { color: theme.subtext }]}>
+            Pick the specific curriculum path you want to unlock.
+          </Text>
+        </View>
+
+        <View style={styles.coursesContainer}>
+          {COURSES.map((course) => {
+            const isSelected = activeCourseId === course.id;
+            return (
+              <TouchableOpacity
+                key={course.id}
+                style={[
+                  styles.courseCard,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: isSelected ? theme.primary : theme.border,
+                    borderWidth: isSelected ? 2 : 1,
+                  },
+                ]}
+                onPress={() => !isPro && setActiveCourseId(course.id)}
+                disabled={isPro}
+              >
+                <View style={styles.courseHeader}>
+                  <View style={{ flex: 1, paddingRight: 8 }}>
+                    <Text style={[styles.courseName, { color: theme.text }]}>
+                      {course.name}
+                    </Text>
+                    <Text style={[styles.courseDesc, { color: theme.subtext }]}>
+                      {course.desc}
+                    </Text>
+                  </View>
+                  <View style={styles.coursePriceContainer}>
+                    <Text style={[styles.coursePriceText, { color: isSelected ? theme.primary : theme.text }]}>
+                      {course.price}
+                    </Text>
+                    {isSelected && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color={theme.primary}
+                        style={{ marginTop: 4, alignSelf: 'flex-end' }}
+                      />
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* STEP 2: PRO TIER CARD */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>2. Select Payment Plan</Text>
+          <Text style={[styles.sectionSubtitle, { color: theme.subtext }]}>
+            Complete your upgrade payment to unlock selected content.
+          </Text>
+        </View>
+
         <View style={[styles.card, styles.proCard, { backgroundColor: theme.card, borderColor: theme.primary }]}>
           <View style={[styles.popularBadge, { backgroundColor: theme.primary }]}>
             <Text style={styles.popularText}>RECOMMENDED</Text>
           </View>
 
           <View style={styles.cardHeader}>
-            <View>
-              <Text style={[styles.proTitle, { color: theme.primary }]}>Pro Tier</Text>
-              <Text style={[styles.planDesc, { color: theme.subtext }]}>Complete engineering prep</Text>
+            <View style={{ flex: 1, marginRight: 10 }}>
+              <Text style={[styles.proTitle, { color: theme.primary }]}>Pro Tier Upgrade</Text>
+              <Text style={[styles.planDesc, { color: theme.subtext }]}>{activeCourse.name}</Text>
             </View>
             <View style={styles.priceRow}>
-              <Text style={[styles.planPrice, { color: theme.text }]}>৳990</Text>
-              <Text style={[styles.periodText, { color: theme.subtext }]}>/month</Text>
+              <Text style={[styles.planPrice, { color: theme.text }]}>{activeCourse.price}</Text>
+              <Text style={[styles.periodText, { color: theme.subtext }]}>/one-time</Text>
             </View>
           </View>
 
@@ -203,7 +272,7 @@ export default function PricingScreen({ navigation }) {
             <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
               <View>
                 <Text style={[styles.modalTitle, { color: theme.text }]}>Demo Payment Gateway</Text>
-                <Text style={[styles.modalSub, { color: theme.subtext }]}>Amount: ৳990 (Pro Plan Upgrade)</Text>
+                <Text style={[styles.modalSub, { color: theme.subtext }]}>Amount: {activeCourse.price} ({activeCourse.name})</Text>
               </View>
               <TouchableOpacity onPress={() => setModalVisible(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Ionicons name="close" size={26} color={theme.text} />
@@ -218,7 +287,7 @@ export default function PricingScreen({ navigation }) {
                 </View>
                 <Text style={[styles.successTitle, { color: theme.text }]}>Payment Successful!</Text>
                 <Text style={[styles.successSub, { color: theme.subtext }]}>
-                  Thank you! Your account has been upgraded to Pro Tier. All 11 topics are now fully unlocked for practice.
+                  Thank you! Your account has been upgraded to Pro Tier for {activeCourse.name}. All 11 topics are now fully unlocked for practice.
                 </Text>
 
                 <TouchableOpacity
@@ -704,6 +773,55 @@ const styles = StyleSheet.create({
   doneButtonText: {
     color: '#FFFFFF',
     fontSize: 17,
+    fontWeight: '800',
+  },
+  sectionHeader: {
+    marginTop: 28,
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  coursesContainer: {
+    gap: 12,
+    marginBottom: 20,
+  },
+  courseCard: {
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  courseHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  courseName: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  courseDesc: {
+    fontSize: 13,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  coursePriceContainer: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    minWidth: 70,
+  },
+  coursePriceText: {
+    fontSize: 18,
     fontWeight: '800',
   },
 });
