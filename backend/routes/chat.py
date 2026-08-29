@@ -201,6 +201,7 @@ async def call_gemini_eval(prompt: str) -> str:
         }
     }
     candidate_models = [GEMINI_MODEL, "gemini-1.5-flash", "gemini-2.0-flash-lite", "gemini-2.0-flash", "gemini-2.5-flash"]
+    last_error = None
     async with httpx.AsyncClient(timeout=15.0) as client:
         for model in candidate_models:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
@@ -210,9 +211,12 @@ async def call_gemini_eval(prompt: str) -> str:
                     data = res.json()
                     parts = data.get("candidates", [])[0].get("content", {}).get("parts", [])
                     return parts[0].get("text", "").strip()
-            except Exception:
+                else:
+                    last_error = Exception(f"HTTP {res.status_code}: {res.text}")
+            except Exception as e:
+                last_error = e
                 continue
-    raise Exception("Gemini eval failed")
+    raise last_error or Exception("Gemini eval failed")
 
 
 async def call_ollama(messages: list[dict]) -> str:

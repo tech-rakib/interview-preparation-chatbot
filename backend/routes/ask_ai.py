@@ -185,6 +185,8 @@ async def _call_gemini_ask(messages: list[dict]) -> str:
                         text_parts = [p.get("text", "") for p in parts if "text" in p]
                         if text_parts:
                             return "\n".join(text_parts).strip()
+                else:
+                    last_error = Exception(f"HTTP {response.status_code}: {response.text}")
             except Exception as e:
                 last_error = e
 
